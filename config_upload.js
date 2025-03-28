@@ -1,25 +1,24 @@
 const fs = require("fs");
-const path = require("path");
 
-const configPath = "public/config.js";
-const templatePath = "config.template.js";
+// Read the template config file
+let config = fs.readFileSync("public/config.template.js", "utf8");
 
-// Ensure the `public/` directory exists, create it if missing
-if (!fs.existsSync("public")) {
-    fs.mkdirSync("public", { recursive: true });
-}
+// Match all occurrences of tempuse.*
+const matches = config.match(/tempuse\.[a-zA-Z0-9_]+/g) || [];
 
-// Read the template file
-let config = fs.readFileSync(templatePath, "utf8");
+let replacedCount = 0;
+matches.forEach((match) => {
+    const envVar = match.replace("tempuse.", "").toUpperCase(); // Convert to uppercase for ENV lookup
+    const value = process.env[envVar] || "[MISSING]"; // Use "[MISSING]" if env variable is not set
 
-// Replace all `tempuse.*` placeholders with Vercel environment variables
-config = config.replace(/tempuse\.([A-Z0-9_]+)/g, (_, key) => {
-    const value = process.env[key] || "[NOT SET]";
-    console.log(`Replacing ${key} with ${value !== "[NOT SET]" ? "[SET]" : "[NOT SET]"}`);
-    return value;
+    const regex = new RegExp(match, "g"); // Ensure all occurrences are replaced
+    config = config.replace(regex, value);
+
+    replacedCount++;
+    console.log(`Replacing ${match} with ${value !== "[MISSING]" ? "[SET]" : "[MISSING]"}`);
 });
 
-// Write the new `config.js` file
-fs.writeFileSync(configPath, config, "utf8");
+// Save the modified config.js
+fs.writeFileSync("public/config.js", config);
 
-console.log("✅ Secret Keys successfully replaced in config.js!");
+console.log(`✅ Secret Keys successfully replaced in config.js! (${replacedCount} replacements)`);
