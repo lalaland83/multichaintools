@@ -1,15 +1,25 @@
 const fs = require("fs");
+const path = require("path");
 
-const TEMPLATE_FILE = "config.template.js"; 
-const OUTPUT_FILE = "public/config.js"; 
+const configPath = "public/config.js";
+const templatePath = "config.template.js";
 
-let config = fs.readFileSync(TEMPLATE_FILE, "utf8");
+// Ensure the `public/` directory exists, create it if missing
+if (!fs.existsSync("public")) {
+    fs.mkdirSync("public", { recursive: true });
+}
 
-config = config.replace(/tempuse\.([A-Z0-9_]+)/g, (match, varName) => {
-    const envValue = process.env[varName] || "";
-    console.log(`Ersetze ${match} mit ${envValue ? "[GESETZT]" : "[FEHLT]"}`);
-    return `"${envValue}"`;
+// Read the template file
+let config = fs.readFileSync(templatePath, "utf8");
+
+// Replace all `tempuse.*` placeholders with Vercel environment variables
+config = config.replace(/tempuse\.([A-Z0-9_]+)/g, (_, key) => {
+    const value = process.env[key] || "[NOT SET]";
+    console.log(`Replacing ${key} with ${value !== "[NOT SET]" ? "[SET]" : "[NOT SET]"}`);
+    return value;
 });
 
-fs.writeFileSync(OUTPUT_FILE, config);
-console.log("✅ Secret Keys DONE");
+// Write the new `config.js` file
+fs.writeFileSync(configPath, config, "utf8");
+
+console.log("✅ Secret Keys successfully replaced in config.js!");
