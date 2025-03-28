@@ -1,5 +1,8 @@
 const fs = require("fs");
-
+// Ensure the 'public' folder exists
+if (!fs.existsSync("public")) {
+    fs.mkdirSync("public", { recursive: true });
+}
 // Read the template config file
 let config = fs.readFileSync("config.template.js", "utf8");
 
