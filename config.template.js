@@ -74,7 +74,7 @@ window.CONFIG = {
             name: "Ethereum",
             apiBase: "https://api.etherscan.io/api",
             explorer: "https://etherscan.io",
-            apiKey: tempuse.explorer_ethereum_apiKey,
+            apiKey: tempuse.EXPLORER_ETHEREUM_APIKEY,
             blockscout: false
         },
         base: {
@@ -82,7 +82,7 @@ window.CONFIG = {
             name: "Base",
             apiBase: "https://api.basescan.org/api",
             explorer: "https://basescan.org",
-            apiKey: tempuse.explorer_base_apiKey,
+            apiKey: tempuse.EXPLORER_BASE_APIKEY,
             blockscout: false
         },
         arbitrum: {
@@ -90,7 +90,7 @@ window.CONFIG = {
             name: "Arbitrum",
             apiBase: "https://api.arbiscan.io/api",
             explorer: "https://arbiscan.io",
-            apiKey: tempuse.explorer_arbitrum_apiKey,
+            apiKey: tempuse.EXPLORER_ARBITRUM_APIKEY,
             blockscout: false
         },
         optimism: {
@@ -98,7 +98,7 @@ window.CONFIG = {
             name: "Optimism",
             apiBase: "https://api-optimistic.etherscan.io/api",
             explorer: "https://optimistic.etherscan.io",
-            apiKey: tempuse.explorer_optimism_apiKey,
+            apiKey: tempuse.EXPLORER_OPTIMISM_APIKEY,
             blockscout: false
         },
         scroll: {
@@ -106,7 +106,7 @@ window.CONFIG = {
             name: "Scroll",
             apiBase: "https://api.scrollscan.com/api",
             explorer: "https://scrollscan.com",
-            apiKey: tempuse.explorer_scroll_apiKey,
+            apiKey: tempuse.EXPLORER_SCROLL_APIKEY,
             blockscout: false
         },
         linea: {
@@ -114,7 +114,7 @@ window.CONFIG = {
             name: "Linea",
             apiBase: "https://api.lineascan.build/api",
             explorer: "https://lineascan.build",
-            apiKey: tempuse.explorerlinea_apiKey,
+            apiKey: tempuse.EXPLORER_LINEA_APIKEY,
             blockscout: false
         },
         ink: {
@@ -122,7 +122,7 @@ window.CONFIG = {
             name: "INK",
             apiBase: "https://explorer.inkonchain.com/api",
             explorer: "https://explorer.inkonchain.com",
-            apiKey: tempuse.explorer_ink_apiKey,
+            apiKey: tempuse.EXPLORER_INK_APIKEY,
             blockscout: true
         },
         soneium: {
@@ -130,7 +130,7 @@ window.CONFIG = {
             name: "Soneium",
             apiBase: "https://soneium.blockscout.com/api",
             explorer: "https://soneium.blockscout.com",
-            apiKey: tempuse.explorer_soneium_apiKey,
+            apiKey: tempuse.EXPLORER_SONEIUM_APIKEY,
             blockscout: true
         },
         fuse: {
@@ -138,7 +138,7 @@ window.CONFIG = {
             name: "Fuse",
             apiBase: "https://explorer.fuse.io/api",
             explorer: "https://explorer.fuse.io",
-            apiKey: tempuse.explorer_fuse_apiKey,
+            apiKey: tempuse.EXPLORER_FUSE_APIKEY,
             blockscout: true
         },
         unichain: {
@@ -146,7 +146,7 @@ window.CONFIG = {
             name: "UniChain",
             apiBase: "https://api.uniscan.xyz/api",
             explorer: "https://uniscan.xyz",
-            apiKey: tempuse.explorer_unichain_apiKey,
+            apiKey: tempuse.EXPLORER_UNICHAIN_APIKEY,
             blockscout: false
         },
         mantle: {
@@ -154,7 +154,7 @@ window.CONFIG = {
             name: "Mantle",
             apiBase: "https://api.mantlescan.xyz/api",
             explorer: "https://mantlescan.xyz",
-            apiKey: tempuse.explorer_mantle_apiKey,
+            apiKey: tempuse.EXPLORER_MANTLE_APIKEY,
             blockscout: false
         },
         zora: {
@@ -162,7 +162,7 @@ window.CONFIG = {
             name: "Zora",
             apiBase: "https://explorer.zora.energy/api",
             explorer: "https://explorer.zora.energy",
-            apiKey: tempuse.explorer_zora_apiKey,
+            apiKey: tempuse.EXPLORER_ZORA_APIKEY,
             blockscout: true
         },
         worldchain: {
@@ -170,7 +170,7 @@ window.CONFIG = {
             name: "Worldchain",
             apiBase: "https://api.worldscan.org/api",
             explorer: "https://worldscan.org",
-            apiKey: tempuse.explorer_worldchain_apiKey,
+            apiKey: tempuse.EXPLORER_WORLDCHAIN_APIKEY,
             blockscout: false
         },
         berachain: {
@@ -178,7 +178,7 @@ window.CONFIG = {
             name: "Berachain",
             apiBase: "https://api.berascan.com/api",
             explorer: "https://berascan.com",
-            apiKey: tempuse.explorer_berachain_apiKey,
+            apiKey: tempuse.EXPLORER_BERACHAIN_APIKEY,
             blockscout: false
         },
         taiko: {
@@ -186,7 +186,7 @@ window.CONFIG = {
             name: "Taiko",
             apiBase: "https://api.taikoscan.io/api",
             explorer: "https://taikoscan.io",
-            apiKey: tempuse.explorer_taiko_apiKey,
+            apiKey: tempuse.EXPLORER_TAIKO_APIKEY,
             blockscout: false
         },
         polygon: {
@@ -194,7 +194,7 @@ window.CONFIG = {
             name: "Polygon",
             apiBase: "https://api.polygonscan.com/api",
             explorer: "https://polygonscan.com",
-            apiKey: tempuse.explorer_polygon_apiKey,
+            apiKey: tempuse.EXPLORER_POLYGON_APIKEY,
             blockscout: false
         },
         bsc: {
@@ -202,7 +202,7 @@ window.CONFIG = {
             name: "BNB S. Chain",
             apiBase: "https://api.bscscan.com/api",
             explorer: "https://www.bscscan.com",
-            apiKey: tempuse.explorer_bsc_apiKey,
+            apiKey: tempuse.EXPLORER_BSC_APIKEY,
             blockscout: false
         },
     }
