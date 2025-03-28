@@ -5,6 +5,9 @@ if (!fs.existsSync("public")) {
     fs.mkdirSync("public", { recursive: true });
 }
 
+// Create a dummy file to prevent Vercel errors
+fs.writeFileSync("public/keep.txt", "This file prevents Vercel errors.");
+
 // Read the template config file
 let config = fs.readFileSync("config.template.js", "utf8");
 
