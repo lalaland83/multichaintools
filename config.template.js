@@ -53,7 +53,7 @@ window.CONFIG = {
         },
     },
     COINGECKO: {
-        coingecko_apiKey: tempuse.coingecko_apiKey, 
+        coingecko_apiKey: tempuse.COINGECKO_APIKEY, 
         cacheDuration: 60 * 60 * 1000, 
         cachePricegecko: "tokenPriceCache" 
     },
