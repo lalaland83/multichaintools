@@ -1,25 +1,21 @@
 const fs = require("fs");
 const path = require("path");
 
-// Funktion zum rekursiven Durchsuchen eines Verzeichnisses
-function listFiles(dir, prefix = "") {
-    try {
-        const files = fs.readdirSync(dir);
-        files.forEach((file) => {
-            const fullPath = path.join(dir, file);
-            const stat = fs.statSync(fullPath);
-            if (stat.isDirectory()) {
-                console.log(`${prefix}[DIR] ${file}/`);
-                listFiles(fullPath, prefix + "  ");
-            } else {
-                console.log(`${prefix}- ${file}`);
-            }
-        });
-    } catch (error) {
-        console.error(`❌ Fehler beim Lesen von ${dir}:`, error.message);
-    }
-}
+// Aktuelles Arbeitsverzeichnis ausgeben
+console.log("📁 Aktuelles Verzeichnis:", process.cwd());
 
-// Starte von der aktuellen Arbeitsumgebung
-console.log("📂 **Dateien in Vercel-Umgebung:**");
+// Alle Dateien und Ordner im aktuellen Verzeichnis listen
+const listFiles = (dir, level = 0) => {
+    const items = fs.readdirSync(dir);
+    items.forEach(item => {
+        const fullPath = path.join(dir, item);
+        const isDirectory = fs.statSync(fullPath).isDirectory();
+        console.log("  ".repeat(level) + (isDirectory ? "📂 " : "📄 ") + item);
+        if (isDirectory) {
+            listFiles(fullPath, level + 1);
+        }
+    });
+};
+
+// Starte im aktuellen Verzeichnis
 listFiles(".");
