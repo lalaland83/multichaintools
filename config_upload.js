@@ -29,3 +29,23 @@ matches.forEach((match) => {
 // Save the modified config.js OUTSIDE public
 fs.writeFileSync("config.js", config);
 console.log(`✅ Secret Keys successfully replaced in config.js! (${replacedCount} replacements)`);
+
+
+const path = require("path");
+
+// Funktion zur Ausgabe aller Dateien und Ordner
+const listFiles = (dir, level = 0) => {
+    const items = fs.readdirSync(dir);
+    items.forEach(item => {
+        const fullPath = path.join(dir, item);
+        const isDirectory = fs.statSync(fullPath).isDirectory();
+        console.log("  ".repeat(level) + (isDirectory ? "📂 " : "📄 ") + item);
+        if (isDirectory) {
+            listFiles(fullPath, level + 1);
+        }
+    });
+};
+
+// Starte im aktuellen Verzeichnis
+console.log("📁 Aktuelles Verzeichnis:", process.cwd());
+listFiles(".");
