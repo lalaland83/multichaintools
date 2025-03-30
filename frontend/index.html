@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Chain Tool</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <script src="init.js"></script>
+
+</head>
+
+<body>
+
+    <!-- ✅ Navigation für verschiedene Seiten -->
+    <div class="navbar">
+        <button class="nav-btn" onclick="showPage('gm')">Multi Chain Sender</button>
+        <button class="nav-btn" onclick="showPage('uniswap')">Uniswap</button>
+        <button class="nav-btn" onclick="showPage('blockchain_stats')">Blockchain Stats</button>
+    </div>
+
+    <div id="walletContainer">
+        <div id="headerControls">
+            <button id="connectWallet">🦊 Connect Wallet</button> <!-- Kein onclick hier! -->
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <p id="walletAddress">Not connected</p>
+    </div>
+
+
+    <!-- ✅ Inhalt der verschiedenen Seiten -->
+    <div id="gmPage" class="page">
+        <div class="title-container">
+            <h2>Multi-Chain Sender</h2>
+            <div class="tooltip" onclick="copyToClipboard()">
+                ❓
+                <span class="tooltiptext">
+                    The site was built to quickly carry out daily activities on various blockchains.<br><br>
+                    -🚀 Say GM<br>
+                    A TX is sent to a smart contract and a GM event is triggered!<br><br>
+                    -⚡ Get Internal Transaction<br>
+                    Calculate the current gas fee, take this amount + 10% as the value and send it back to you via
+                    internal transaction via the smart contract!<br><br>
+                    All smart contract are linked and can be checked.<br>
+                    No additional fee. Just the TX cost.<br>
+                    It was built to use as little gas as possible.<br><br>
+                    If you find it helpful, feel free to donate anything.<br>
+                    0x2E7520254060D925608E96CC7a1d43cC6C6d9383<br>
+                    (Address is copied when you click on the ?)
+                </span>
+            </div>
+
+            <div class="tooltip">
+                Deploy Contract Info
+                <span class="tooltiptext">
+                    Deploy Contract Info:<br><br>
+                    - 🚀 Deploy Contract (cheap):<br>
+                    Deploys a minimal contract optimized for low gas usage.<br><br>
+                    - 🚀 Deploy Contract (10k characters):<br>
+                    Deploys a contract with 10k characters, requiring higher gas fees.<br><br>
+                    Both contracts serve no specific function and are purely for the user to have deployed a smart
+                    contract on-chain.
+                </span>
+            </div>
+        </div>
+
+
+
+        <div id="chainsContainer"></div>
+    </div>
+    <div id="uniswapPage" class="page" style="display: none;">
+    <div id="positionsSummaryContainer">
+        <h2 id="positionsSummary">My Uniswap Positions</h2>
+    </div>
+    <br>
+    <button onclick="getPositions()">Get Positions</button>
+    <button id="loadPositionsButton" onclick="getUniData()">Load Positions</button>
+
+    <div class="dropdown">
+        <button id="networkButton" class="dropdown-btn">🌐 Select Network</button>
+        <ul id="networkList" class="dropdown-list"></ul>
+    </div>
+
+
+    <table id="positionsTable">
+        <thead>
+            <tr>
+                <th>Status </span></th>
+                <th> </span></th>
+                <th onclick="sortTable(1, false)">Pair <span id="sortIcon0">↕</span></th>
+                <th onclick="sortTable(2, true)">Age <span id="sortIcon1">↕</span></th>
+                <th onclick="sortTable(3, true)">Liquidity (USD) <span id="sortIcon2">↕</span></th>
+                <th>Liquidity (Tokens) </span></th>
+                <th>Unclaimed Fees </span></th>
+            </tr>
+        </thead>
+        <tbody id="positionsTableBody">
+            <!-- Hier werden Positionen eingefügt -->
+        </tbody>
+    </table>
+</div>
+
+
+<div id="blockchain_statsPage" class="page" style="display: none;">
+    <h2 class="blockchain-stats-header">
+        Blockchain Stats
+        <span class="button-group">
+            <button id="totalStatsButton" class="stats-btn">📊 Total Stats</button>
+            <button id="refreshStatsButton" class="stats-btn">🔄 Refresh Stats</button>
+        </span>
+    </h2>
+    <p id="statusMessage" style="display: none; color: white;"></p>
+    <div id="statsContainer"></div>
+</div>
+
+<!-- Blockchain Stats Popup Overlay 
+<div id="blockchainstats-popup-overlay" class="blockchainstats-popup-overlay" style="display: none;">
+    <div class="blockchainstats-popup-content">
+        <span id="blockchainstats-popup-close-button" class="blockchainstats-popup-close">&times;</span>
+        <h3 id="blockchainstats-popup-title">Blockchain Details</h3>
+        <div id="blockchainstats-popup-details"></div>
+    </div>
+</div>
+-->
+
+
+
+    <!-- Skripte -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="config.js"></script>
+    <script src="gm_contracts.js"></script>
+    <script src="gm_main.js"></script>
+    <script src="wallet.js"></script>
+    <script src="ui.js"></script>
+    <script src="navigation.js"></script> <!-- Neue Datei für Tab-Wechsel -->
+    <script src="uniswap.js"></script>
+    <script src="blockchain_stats.js"></script>
+
+
+</body>
+
+</html>
