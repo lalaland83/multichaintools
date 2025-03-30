@@ -3,7 +3,10 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server läuft auf Port ${PORT}`);
+});
 
 app.use(cors());
 app.use(express.json());
@@ -89,10 +92,6 @@ app.get("/", (req, res) => {
     res.send("Backend läuft!");
 });
 
-app.listen(PORT, () => {
-    console.log(`✅ Backend läuft auf http://localhost:${PORT}`);
-  //  console.log(process.env)
-});
 
 
 function getApiBase(chain) {
