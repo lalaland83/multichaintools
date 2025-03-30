@@ -11,60 +11,6 @@ app.listen(PORT, () => {
 app.use(cors());
 app.use(express.json());
 
-// Sicherheits-Route für API-Keys und sensible Daten
-app.get("/api/config", (req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-
-        // Prüfen, ob ein Auth-Header vorhanden ist und ob er korrekt ist
-        if (!authHeader || authHeader !== `Bearer ${process.env.SECRET_TOKEN}`) {
-            return res.status(403).json({ error: "Unauthorized" });
-        }
-
-        res.json({
-            GRAPH: {
-                GRAPH_API_KEY: process.env.GRAPH_API_KEY,
-                NETWORKS: {
-                    BASE: process.env.GRAPH_NETWORKS_BASE,
-                    OPTIMISM: process.env.GRAPH_NETWORKS_OPTIMISM,
-                    ARBITRUM: process.env.GRAPH_NETWORKS_ARBITRUM,
-                    BSC: process.env.GRAPH_NETWORKS_BSC,
-                    AVALANCHE: process.env.GRAPH_NETWORKS_AVALANCHE,
-                    CELO: process.env.GRAPH_NETWORKS_CELO,
-                    BLAST: process.env.GRAPH_NETWORKS_BLAST,
-                    POLYGON: process.env.GRAPH_NETWORKS_POLYGON,
-                    ETHEREUM: process.env.GRAPH_NETWORKS_ETHEREUM
-                }
-            },
-            COINGECKO: {
-                coingecko_apiKey: process.env.COINGECKO_APIKEY,
-            },
-            chains: {
-                ethereum: { apiKey: process.env.EXPLORER_ETHEREUM_APIKEY },
-                base: { apiKey: process.env.EXPLORER_BASE_APIKEY },
-                arbitrum: { apiKey: process.env.EXPLORER_ARBITRUM_APIKEY },
-                optimism: { apiKey: process.env.EXPLORER_OPTIMISM_APIKEY },
-                scroll: { apiKey: process.env.EXPLORER_SCROLL_APIKEY },
-                linea: { apiKey: process.env.EXPLORER_LINEA_APIKEY },
-                ink: { apiKey: process.env.EXPLORER_INK_APIKEY },
-                soneium: { apiKey: process.env.EXPLORER_SONEIUM_APIKEY },
-                fuse: { apiKey: process.env.EXPLORER_FUSE_APIKEY },
-                unichain: { apiKey: process.env.EXPLORER_UNICHAIN_APIKEY },
-                mantle: { apiKey: process.env.EXPLORER_MANTLE_APIKEY },
-                zora: { apiKey: process.env.EXPLORER_ZORA_APIKEY },
-                worldchain: { apiKey: process.env.EXPLORER_WORLDCHAIN_APIKEY },
-                berachain: { apiKey: process.env.EXPLORER_BERACHAIN_APIKEY },
-                taiko: { apiKey: process.env.EXPLORER_TAIKO_APIKEY },
-                polygon: { apiKey: process.env.EXPLORER_POLYGON_APIKEY },
-                bsc: { apiKey: process.env.EXPLORER_BSC_APIKEY }
-            }
-        });
-    } catch (error) {
-        console.error("Fehler beim Abrufen der Konfiguration:", error);
-        res.status(500).json({ error: "Interner Serverfehler" });
-    }
-});
-
 // Test-Route, um zu prüfen, ob das Backend läuft
 app.get("/", (req, res) => {
     res.send("✅ Backend läuft!");
