@@ -1,20 +1,13 @@
 const fs = require("fs");
-const path = require("path");
 
-// 1️⃣ Stelle sicher, dass der `public`-Ordner existiert
-if (!fs.existsSync("public")) {
-    fs.mkdirSync("public", { recursive: true });
-}
+const configPath = "./frontend/config.js"; // Passe den Pfad ggf. an
 
-// 2️⃣ Falls nötig, verschiebe `config.js` ins `public`-Verzeichnis
-const configSrc = path.join(__dirname, "config.js");
-const configDest = path.join(__dirname, "public", "config.js");
-
-if (fs.existsSync(configSrc)) {
-    fs.copyFileSync(configSrc, configDest);
-    console.log("✅ config.js wurde nach public/ verschoben.");
+if (!fs.existsSync(configPath)) {
+    console.warn("⚠️  WARNUNG: config.js wurde nicht gefunden! Erstelle eine Standardversion...");
+    fs.writeFileSync(configPath, "export const CONFIG = {};");
+    console.log("✅ config.js erstellt!");
 } else {
-    console.warn("⚠️  WARNUNG: config.js wurde nicht gefunden!");
+    console.log("✅ config.js bereits vorhanden.");
 }
 
 console.log("🚀 Alle Dateien sind bereit für den Upload!");
