@@ -120,10 +120,10 @@ async function fetchBlockchainStats(chain) {
     const chainName = typeof chain === "object" ? chain.name : chain;
 
 
-    const response = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
+    const response = await fetch(`api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
     const data = await response.json();
 
-    const responseInternal = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
+    const responseInternal = await fetch(`api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
     const dataInternal = await responseInternal.json();
 
     /*
@@ -374,7 +374,7 @@ function delay(ms) {
 async function fetchERC20Transactions(chain) {
     await delay(200);
 
-    const url = `http://localhost:3001/api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
+    const url = `api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
 
     try {
         const response = await fetch(url);
@@ -419,7 +419,7 @@ async function fetchERC721Transactions(chain) {
     await delay(300);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
 
         if (!Array.isArray(data)) {
@@ -470,7 +470,7 @@ async function fetchERC1155Transactions(chain) {
     await delay(400);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
     //    console.log(`🔍 API Antwort für ${chain.name}:`, data);
 
