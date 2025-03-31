@@ -205,6 +205,13 @@ const contracts = {
         responseAddress: "0x8d0cc53aAA66A204457A3714C8EEc8E344436Db3", 
         chainIdHex: "0xfe", explorer: "https://swanscan.io/tx/", 
         deployEnabled: true 
+    },
+        5330: {
+        name: "Superseed", 
+        address: "0x75BBAEE0cC80CF92668D3ADec82CDEdc888335D3", 
+        responseAddress: "0x8d0cc53aAA66A204457A3714C8EEc8E344436Db3", 
+        chainIdHex: "0x14d2", explorer: "https://explorer.superseed.xyz/tx/", 
+        deployEnabled: true 
     }
 };
 
