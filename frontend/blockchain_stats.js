@@ -109,7 +109,7 @@ async function loadBlockchainStats(tbody) {
     tbody.innerHTML = '';
 
     try {
-        const response = await fetch(`http://localhost:3001/getBlockchainStats/${connectedWalletAddress}`);
+        const response = await fetch(`/getBlockchainStats/${connectedWalletAddress}`);
         const result = await response.json();
 
         if (result.success) {
@@ -143,10 +143,10 @@ async function fetchBlockchainStats(chain) {
     const chainName = typeof chain === "object" ? chain.name : chain;
 
 
-    const response = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
+    const response = await fetch(`/api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
     const data = await response.json();
 
-    const responseInternal = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
+    const responseInternal = await fetch(`/api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
     const dataInternal = await responseInternal.json();
 
     /*
@@ -310,7 +310,7 @@ async function saveBlockchainStats(wallet, chain, stats) {
     //  console.log("Received stats:", stats);
 
     try {
-        const response = await fetch("http://localhost:3001/saveBlockchainStats", {
+        const response = await fetch("/saveBlockchainStats", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -339,7 +339,7 @@ function delay(ms) {
 async function fetchERC20Transactions(chain) {
     await delay(200);
 
-    const url = `http://localhost:3001/api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
+    const url = `/api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
 
     try {
         const response = await fetch(url);
@@ -384,7 +384,7 @@ async function fetchERC721Transactions(chain) {
     await delay(300);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`/api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
 
         if (!Array.isArray(data)) {
@@ -435,7 +435,7 @@ async function fetchERC1155Transactions(chain) {
     await delay(400);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`/api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
         //    console.log(`🔍 API Antwort für ${chain.name}:`, data);
 
@@ -619,7 +619,7 @@ async function setupBlockchainStatsPopup(chainName) {
                 console.log("Keine Daten für diesen Chain im Cache gefunden, hole sie von der API.");
                 // Hole die Daten von der API, wenn sie im Cache nicht vorhanden sind
 
-                const response = await fetch(`http://localhost:3001/getChainStats/${connectedWalletAddress}/${chainName}`);
+                const response = await fetch(`/getChainStats/${connectedWalletAddress}/${chainName}`);
                 const apiResult = await response.json();
 
                 // Check if the API response is successful
@@ -646,7 +646,7 @@ async function setupBlockchainStatsPopup(chainName) {
             console.log("Keine Daten für diesen Chain im Cache gefunden, hole sie von der API.");
             // Hole die Daten von der API, wenn sie im Cache nicht vorhanden sind
 
-            const response = await fetch(`http://localhost:3001/getChainStats/${connectedWalletAddress}/${chainName}`);
+            const response = await fetch(`/getChainStats/${connectedWalletAddress}/${chainName}`);
             const apiResult = await response.json();
 
             // Check if the API response is successful
@@ -1229,7 +1229,7 @@ async function tokenblockscout(chain) {
     //   console.log(`tokenblockscout für ${chain.name}`);
 
     try {
-        const response = await fetch(`http://localhost:3001/api/token-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`/api/token-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
 
         let erc20Response = data.erc20;
