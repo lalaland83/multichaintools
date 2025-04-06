@@ -288,31 +288,35 @@ body.dark-mode .theme-button {
 .dropdown-btn {
     background: #222;
     color: white;
-    border: none;
+    border: 1px solid #3a3f4b;
     padding: 10px 15px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     border-radius: 5px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
+
 /* Dropdown-Liste */
 .dropdown-list {
     display: none;
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;
     background: #333;
     list-style: none;
     padding: 0;
     margin: 5px 0;
     border-radius: 5px;
-    overflow: hidden;
+    overflow: auto;
+    max-height: 400px;
     width: 200px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1000; /* Hohe Priorität, wenn geöffnet */
 }
+
 
 /* Dropdown-Elemente */
 .dropdown-list li {
@@ -327,6 +331,18 @@ body.dark-mode .theme-button {
 .dropdown-list li:hover {
     background: #444;
 }
+
+.dropdown-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-list input[type="checkbox"] {
+    accent-color: #4caf50;
+    cursor: pointer;
+}
+
 
 /* Markierte Auswahl */
 .selected {
@@ -449,10 +465,62 @@ body.dark-mode .theme-button {
     border: 1px solid #444; /* Dünne Trennlinien */
 }
 
+/* Tabelle */
 .blockchain-stats-table th {
-    background-color: #222; /* Dunkler Hintergrund für Header */
+    background-color: #222;
     font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    padding: 10px 4px 10px 18px; /* Oben: 10px, Rechts: 16px, Unten: 10px, Links: 12px */
+    position: relative;
+    vertical-align: middle;
+    text-align: center;
 }
+
+/* Äußerer Wrapper: Container */
+.header-wrapper {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    display: block; /* Nur Container */
+}
+
+/* Innerer Wrapper: Container für Text und Pfeil */
+.header-text-wrapper {
+    display: flex; /* Flex für Layout */
+    align-items: center; /* Vertikale Mitte */
+    justify-content: center; /* Zentriert den Inhalt */
+}
+
+/* Text */
+.header-text {
+    text-align: center; /* Zentriert den Text */
+    white-space: nowrap;
+    line-height: 1.1;
+}
+
+/* Pfeil */
+.sort-icon {
+    margin-left: 4px; /* Fester Abstand zwischen Text und Pfeil */
+    width: 12px; /* Feste Breite für den Pfeil */
+    text-align: center;
+    font-size: 1.1em;
+    opacity: 0.7;
+    color: #ccc;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+
+
+/* Aktiver Zustand */
+.blockchain-stats-table th.sorted .sort-icon {
+    opacity: 1;
+    color: #00ffe0;
+}
+
+
+
 
 .blockchain-stats-table tr:nth-child(even) {
     background-color: #2a2a2a; /* Leichte Hintergrundfarbe für bessere Lesbarkeit */
