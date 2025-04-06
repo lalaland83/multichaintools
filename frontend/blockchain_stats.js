@@ -109,7 +109,7 @@ async function loadBlockchainStats(tbody) {
     tbody.innerHTML = '';
 
     try {
-        const response = await fetch(`/getBlockchainStats/${connectedWalletAddress}`);
+        const response = await fetch(`/api/getBlockchainStats/${connectedWalletAddress}`);
         const result = await response.json();
 
         if (result.success) {
@@ -310,7 +310,7 @@ async function saveBlockchainStats(wallet, chain, stats) {
     //  console.log("Received stats:", stats);
 
     try {
-        const response = await fetch("/saveBlockchainStats", {
+        const response = await fetch("/api/saveBlockchainStats", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
