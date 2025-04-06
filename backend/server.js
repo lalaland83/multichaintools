@@ -1,6 +1,12 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { saveBlockchainStats, pool } = require("./db");
+
+
+
+// console.log("Pool object:", pool);
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,12 +23,9 @@ app.get("/", (req, res) => {
 });
 
 
-
-
 function getApiBase(chain) {
 
-    console.log(`🔍 getApiBase() called with chain: ${chain}`);
-
+   // console.log(`🔍 getApiBase() called with chain: ${chain}`);
 
     const apiBases = {
         ethereum: "https://api.etherscan.io/api",
@@ -42,9 +45,10 @@ function getApiBase(chain) {
         taiko: "https://api.taikoscan.io/api",
         polygon: "https://api.polygonscan.com/api",
         bsc: "https://api.bscscan.com/api",
+        zetachain: "https://zetachain.blockscout.com/api",
     };
 
-    console.log(`🔎 API Base Check: ${chain} -> ${apiBases[chain] || "❌ Not Found"}`);
+  //  console.log(`🔎 API Base Check: ${chain} -> ${apiBases[chain] || "❌ Not Found"}`);
 
     return apiBases[chain] || null;
 }
@@ -70,7 +74,7 @@ app.get("/api/proxy", async (req, res) => {
     let apiBase = getApiBase(chain);
 
     console.log(`🔍 API Key for ${chain}:`, apiKey ? "✅ Loaded" : "❌ Missing!");
-    console.log(`🔗 API Base for ${chain}:`, apiBase || "❌ Not Found!");
+  //  console.log(`🔗 API Base for ${chain}:`, apiBase || "❌ Not Found!");
 
     if (!apiBase || !apiKey) {
         return res.status(400).json({ error: "Invalid chain or missing API key" });
@@ -121,7 +125,6 @@ app.get("/api/proxy", async (req, res) => {
             JSON.stringify(dataTxListInternal?.result?.slice(0, 5), null, 2) || "❌ No Data"
         );
 */
-
 
         res.json({ txlist: dataTxList, txlistinternal: dataTxListInternal });
 
@@ -283,5 +286,223 @@ app.get("/api/erc1155-transactions", async (req, res) => {
     } catch (error) {
         console.error("❌ Fehler beim Abrufen der ERC-1155-Transaktionen:", error);
         res.status(500).json([]);
+    }
+});
+
+
+app.post("/saveBlockchainStats", async (req, res) => {
+    try {
+        const { wallet, chain, stats } = req.body;
+
+        // Logge die eingehenden Daten
+    //     console.log("Wallet:", wallet);
+    //     console.log("chain:", chain);
+   //      console.log("Received stats:", stats);
+
+        if (!wallet || !chain) {
+            console.error("❌ Invalid wallet or chain:", wallet, chain);
+            return res.status(400).json({ success: false, error: "Invalid wallet or chain" });
+        }
+
+        // Weiter mit dem Speichern der Daten
+        await saveBlockchainStats(wallet, chain, stats);
+        res.json({ success: true, message: "Stats saved successfully" });
+    } catch (error) {
+        console.error("❌ Error saving blockchain stats:", error);
+        res.status(500).json({ success: false, error: "Database error" });
+    }
+});
+
+
+// Get all blockchain stats for a wallet
+
+app.get("/getBlockchainStats/:wallet", async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const wallet = req.params.wallet;
+
+        // 1️⃣ Temporäre Tabelle erstellen
+        await client.query(`
+            CREATE TEMP TABLE parsed_temp AS
+            SELECT 
+                wallet_address,
+                chain,
+                (tx_entry).key::DATE AS tx_date,
+                (tx_entry).value::INTEGER AS tx_count
+            FROM wallet_chain_stats,
+            LATERAL jsonb_each_text(daily_tx_counts) AS tx_entry;
+        `);
+
+        // 2️⃣ Hauptabfrage mit Berechnungen + Originaldaten
+        const result = await client.query(
+            `
+            WITH base_stats AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    MIN(tx_date) AS firstTxDate,
+                    MAX(tx_date) AS lastTxDate,
+                    COUNT(DISTINCT tx_date) AS daysUsed,
+                    COUNT(DISTINCT DATE_TRUNC('week', tx_date)) AS weeksUsed,
+                    COUNT(DISTINCT DATE_TRUNC('month', tx_date)) AS monthsUsed,
+                    COUNT(DISTINCT DATE_TRUNC('year', tx_date)) AS yearsUsed
+                FROM parsed_temp
+                GROUP BY wallet_address, chain
+            ),
+            streaks AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    tx_date,
+                    tx_date - LAG(tx_date) OVER (PARTITION BY wallet_address, chain ORDER BY tx_date) = 1 AS is_continuous
+                FROM parsed_temp
+            ),
+            streak_groups AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    tx_date,
+                    SUM(CASE WHEN is_continuous THEN 0 ELSE 1 END) OVER (PARTITION BY wallet_address, chain ORDER BY tx_date) AS streak_id
+                FROM streaks
+            ),
+            streak_lengths AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    streak_id,
+                    COUNT(*) AS streak_length
+                FROM streak_groups
+                GROUP BY wallet_address, chain, streak_id
+            ),
+            longest_streak_calc AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    MAX(streak_length) AS longestStreak
+                FROM streak_lengths
+                GROUP BY wallet_address, chain
+            ),
+            current_streak_calc AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    COUNT(*) AS currentStreak
+                FROM (
+                    SELECT 
+                        wallet_address,
+                        chain,
+                        tx_date,
+                        MAX(tx_date) OVER (PARTITION BY wallet_address, chain) AS last_tx_date,
+                        ROW_NUMBER() OVER (PARTITION BY wallet_address, chain ORDER BY tx_date DESC) - 1 AS days_ago
+                    FROM parsed_temp
+                    WHERE tx_date <= CURRENT_DATE
+                ) sub
+                WHERE last_tx_date - days_ago * INTERVAL '1 day' = tx_date
+                GROUP BY wallet_address, chain
+            ),
+            most_active_day_calc AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    tx_date AS mostActiveDay
+                FROM (
+                    SELECT 
+                        wallet_address,
+                        chain,
+                        tx_date,
+                        SUM(tx_count) AS total_tx,
+                        ROW_NUMBER() OVER (PARTITION BY wallet_address, chain ORDER BY SUM(tx_count) DESC, tx_date DESC) AS rn
+                    FROM parsed_temp
+                    GROUP BY wallet_address, chain, tx_date
+                ) sub
+                WHERE rn = 1
+            ),
+            most_active_month_calc AS (
+                SELECT 
+                    wallet_address,
+                    chain,
+                    month_start AS mostActiveMonth
+                FROM (
+                    SELECT 
+                        wallet_address,
+                        chain,
+                        DATE_TRUNC('month', tx_date) AS month_start,
+                        SUM(tx_count) AS total_tx,
+                        ROW_NUMBER() OVER (PARTITION BY wallet_address, chain ORDER BY SUM(tx_count) DESC, DATE_TRUNC('month', tx_date) DESC) AS rn
+                    FROM parsed_temp
+                    GROUP BY wallet_address, chain, DATE_TRUNC('month', tx_date)
+                ) sub
+                WHERE rn = 1
+            )
+            SELECT 
+                wcs.*, -- 👈 Hier werden ALLE Originaldaten aus wallet_chain_stats eingefügt!
+                TO_CHAR(bs.firstTxDate, 'YYYY-MM-DD') AS firstTxDate, -- ✅ Nur Datum
+                TO_CHAR(bs.lastTxDate, 'YYYY-MM-DD') AS lastTxDate,   -- ✅ Nur Datum
+                bs.daysUsed,
+                bs.weeksUsed,
+                bs.monthsUsed,
+                bs.yearsUsed,
+                COALESCE(lsc.longestStreak, 0) AS longestStreak,
+                COALESCE(csc.currentStreak, 0) AS currentStreak,
+                TO_CHAR(mad.mostActiveDay, 'YYYY-MM-DD') AS mostActiveDay,  -- ✅ Nur Datum
+                TO_CHAR(mam.mostActiveMonth, 'YYYY-MM-DD') AS mostActiveMonth -- ✅ Nur Datum
+            FROM wallet_chain_stats wcs
+            LEFT JOIN base_stats bs ON wcs.wallet_address = bs.wallet_address AND wcs.chain = bs.chain
+            LEFT JOIN longest_streak_calc lsc ON wcs.wallet_address = lsc.wallet_address AND wcs.chain = lsc.chain
+            LEFT JOIN current_streak_calc csc ON wcs.wallet_address = csc.wallet_address AND wcs.chain = csc.chain
+            LEFT JOIN most_active_day_calc mad ON wcs.wallet_address = mad.wallet_address AND wcs.chain = mad.chain
+            LEFT JOIN most_active_month_calc mam ON wcs.wallet_address = mam.wallet_address AND wcs.chain = mam.chain
+            WHERE wcs.wallet_address = $1
+            ORDER BY wcs.wallet_address, wcs.chain;
+            `,
+            [wallet]
+        );
+
+        // 3️⃣ Temporäre Tabelle aufräumen
+        await client.query("DROP TABLE parsed_temp;");
+
+        // Ergebnis zurücksenden
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
+        console.error("❌ Error fetching blockchain stats:", error);
+        res.status(500).json({ success: false, error: "Database error" });
+    } finally {
+        client.release();
+    }
+});
+
+
+
+
+/*
+app.get("/getBlockchainStats/:wallet", async (req, res) => {
+    try {
+        const wallet = req.params.wallet;
+        const result = await pool.query(
+            "SELECT * FROM wallet_chain_stats WHERE wallet_address = $1",
+            [wallet]
+        );
+
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
+        console.error("❌ Error fetching blockchain stats:", error);
+        res.status(500).json({ success: false, error: "Database error" });
+    }
+});
+*/
+
+// Get stats for a specific chain
+app.get("/getChainStats/:wallet/:chain", async (req, res) => {
+    try {
+        const { wallet, chain } = req.params;
+        const result = await pool.query(
+            "SELECT * FROM wallet_chain_stats WHERE wallet_address = $1 AND chain = $2",
+            [wallet, chain]
+        );
+
+        res.json({ success: true, data: result.rows.length > 0 ? result.rows[0] : null });
+    } catch (error) {
+        console.error("❌ Error fetching chain stats:", error);
+        res.status(500).json({ success: false, error: "Database error" });
     }
 });
