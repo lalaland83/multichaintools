@@ -290,7 +290,7 @@ app.get("/api/erc1155-transactions", async (req, res) => {
 });
 
 
-app.post("/saveBlockchainStats", async (req, res) => {
+app.post("/api/saveBlockchainStats", async (req, res) => {
     try {
         const { wallet, chain, stats } = req.body;
 
@@ -316,7 +316,7 @@ app.post("/saveBlockchainStats", async (req, res) => {
 
 // Get all blockchain stats for a wallet
 
-app.get("/getBlockchainStats/:wallet", async (req, res) => {
+app.get("/api/getBlockchainStats/:wallet", async (req, res) => {
     const client = await pool.connect();
     try {
         const wallet = req.params.wallet;
@@ -492,7 +492,7 @@ app.get("/getBlockchainStats/:wallet", async (req, res) => {
 */
 
 // Get stats for a specific chain
-app.get("/getChainStats/:wallet/:chain", async (req, res) => {
+app.get("/api/getChainStats/:wallet/:chain", async (req, res) => {
     try {
         const { wallet, chain } = req.params;
         const result = await pool.query(
