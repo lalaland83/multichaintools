@@ -16,7 +16,6 @@
     <!-- ✅ Navigation für verschiedene Seiten -->
     <div class="navbar">
         <button class="nav-btn" onclick="showPage('gm')">Multi Chain Sender</button>
-        <button class="nav-btn" onclick="showPage('uniswap')">Uniswap</button>
         <button class="nav-btn" onclick="showPage('blockchain_stats')">Wallet Chain Stats</button>
     </div>
 
@@ -70,20 +69,6 @@
 
 
 
-        <div id="chainsContainer"></div>
-    </div>
-    <div id="uniswapPage" class="page" style="display: none;">
-    <div id="positionsSummaryContainer">
-        <h2 id="positionsSummary">My Uniswap Positions</h2>
-    </div>
-    <br>
-    <button onclick="getPositions()">Get Positions</button>
-    <button id="loadPositionsButton" onclick="getUniData()">Load Positions</button>
-
-    <div class="dropdown">
-        <button id="networkButton" class="dropdown-btn">🌐 Select Network</button>
-        <ul id="networkList" class="dropdown-list"></ul>
-    </div>
 
 
     <table id="positionsTable">
