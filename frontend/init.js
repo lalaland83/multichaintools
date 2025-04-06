@@ -79,6 +79,15 @@ async function initializeProvider() {
 
 window.onload = async () => {
     console.log("🔹 window.onload -> initializePage() läuft...");
+
+    const selected = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]");
+    if (!Array.isArray(selected) || selected.length === 0) {
+        console.log("⚠️ Keine Chain-Auswahl gefunden. Setze Standardwert: ['ethereum']");
+        localStorage.setItem("selectedNetworksStats", JSON.stringify(["ethereum"]));
+    }
+
+    buildChainSelectorDropdown();
+
     await initializePage();
     renderChainButtons();
     getStoredPositions();  // ✅ Gespeicherte Pool-IDs direkt anzeigen
@@ -118,3 +127,4 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePositionsSummary();
     updateStatsButtonsState();
 });
+

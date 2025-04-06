@@ -16,7 +16,8 @@
     <!-- ✅ Navigation für verschiedene Seiten -->
     <div class="navbar">
         <button class="nav-btn" onclick="showPage('gm')">Multi Chain Sender</button>
-        <button class="nav-btn" onclick="showPage('blockchain_stats')">Blockchain Stats</button>
+        <button class="nav-btn" onclick="showPage('uniswap')">Uniswap</button>
+        <button class="nav-btn" onclick="showPage('blockchain_stats')">Wallet Chain Stats</button>
     </div>
 
     <div id="walletContainer">
@@ -105,18 +106,28 @@
 
 
 <div id="blockchain_statsPage" class="page" style="display: none;">
-    <h2 class="blockchain-stats-header">
-        Blockchain Stats
-        <span class="button-group">
+    <p></p>
+    <div class="blockchain-stats-header">
+        <h2>Wallet Chain Stats</h2>
+        <span class="button-group" style="display: flex; gap: 10px;">
             <button id="totalStatsButton" class="stats-btn">📊 Total Stats</button>
             <button id="refreshStatsButton" class="stats-btn">🔄 Refresh Stats</button>
+            <div class="dropdown" id="chain-selector-wrapper">
+                <button class="dropdown-btn" onclick="toggleChainDropdown()">Select Networks ▾</button>
+                <ul id="chain-dropdown-content" class="dropdown-list"></ul>
+            </div>
         </span>
-    </h2>
+    </div>
+
     <p id="statusMessage" style="display: none; color: white;"></p>
     <div id="statsContainer"></div>
 </div>
 
+
+
+
 <!-- Blockchain Stats Popup Overlay 
+
 <div id="blockchainstats-popup-overlay" class="blockchainstats-popup-overlay" style="display: none;">
     <div class="blockchainstats-popup-content">
         <span id="blockchainstats-popup-close-button" class="blockchainstats-popup-close">&times;</span>

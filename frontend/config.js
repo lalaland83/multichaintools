@@ -205,6 +205,14 @@ window.CONFIG = {
             apiKey: "",
             blockscout: false
         },
+        zetachain: {
+            chainId: 7000,
+            name: "Zetachain",
+            apiBase: "https://zetachain.blockscout.com/api",
+            explorer: "https://zetachain.blockscout.com",
+            apiKey: "",
+            blockscout: true
+        },
     }
 };
 
@@ -334,6 +342,7 @@ function getApiBase(chain) {
         taiko: "https://api.taikoscan.io/api",
         polygon: "https://api.polygonscan.com/api",
         bsc: "https://api.bscscan.com/api",
+        zetachain: "https://zetachain.blockscout.com/api",
     };
     return apiBases[chain] || null;
 }

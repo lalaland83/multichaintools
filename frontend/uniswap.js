@@ -144,8 +144,13 @@ function getAge(timestamp) {
 }
 
 
-function formatNumber(num, decimals = 6) {
-    return Number(num).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: decimals });
+const userLocale = navigator.language || "en-US";
+
+function formatNumber2(num, decimals = 0) {
+    return Number(num).toLocaleString(userLocale, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
 }
 
 function tickToPrice(tick) {

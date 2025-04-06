@@ -1,8 +1,18 @@
+function formatNumber(num, decimals = 0) {
+    return Number(num).toLocaleString(userLocale, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
 const userLang = navigator.language || "en";
 const formatter = new Intl.DateTimeFormat(userLang, { month: "short" });
 const yearLabel = new Intl.DisplayNames([userLang], { type: "dateTimeField" }).of("year");
 
 let localizedMonths = Array.from({ length: 12 }, (_, i) => formatter.format(new Date(2000, i, 1)));
+let currentSortColumn = null;
+let currentSort = { column: null, asc: true };
+let blockchainTableData = []; // global für Sortierung
 
 
 document.getElementById("refreshStatsButton").addEventListener("click", async () => {
@@ -13,32 +23,75 @@ document.getElementById("totalStatsButton").addEventListener("click", () => {
 });
 
 
+// 🔧 Nur einmal definieren – außerhalb der Funktion
+const headerMap = [
+    { label: "Chain", key: "chain" },
+    { label: "Total TX", key: "total_tx" },
+    { label: "ERC-20 \n✉️", key: "erc20_sent_tx" },
+    { label: "ERC-20 \n📥", key: "erc20_received_tx" },
+    { label: "Unique \nNFTs ✉️", key: "erc721_sent" },
+    { label: "Unique \nNFTs 📥", key: "erc721_unique_received" },
+    { label: "Failed TX", key: "failed_tx" },
+    { label: "Success \nRate", key: "success_rate" },
+    { label: "First TX", key: "firsttxdate" },
+    { label: "Last TX", key: "lasttxdate" },
+    { label: "Most Active \nDay", key: "mostactiveday" },
+    { label: "Most Active \nMonth", key: "mostactivemonth" },
+    { label: "Streak", key: "currentstreak" },
+    { label: "Longest \nStreak", key: "longeststreak" },
+    { label: "Days \nUsed", key: "daysused" },
+    { label: "Weeks \nUsed", key: "weeksused" },
+    { label: "Months \nUsed", key: "monthsused" },
+    { label: "Years \nUsed", key: "yearsused" }
+];
 
-function setupBlockchainStats() {
+async function setupBlockchainStats() {
     const container = document.getElementById("blockchain_statsPage");
 
     const existingTable = container.querySelector("table");
-    if (existingTable) {
-        existingTable.remove();
-    }
+    if (existingTable) existingTable.remove();
 
     const table = document.createElement("table");
     table.classList.add("blockchain-stats-table");
 
-    const headers = [
-        "Chain", "Total TX", "ERC-20 ✉️", "ERC-20 📥", "Unique \nNFTs ✉️", "Unique \nNFTs 📥",
-        "Failed TX", "Success Rate", "First TX", "Last TX",
-        "Most Active \nDay", "Most Active \nMonth", "Streak",
-        "Longest \nStreak", "Days Used", "Weeks Used", "Months Used", "Years Used"
-    ];
-
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    headers.forEach(text => {
+
+    headerMap.forEach((header, index) => {
         const th = document.createElement("th");
-        th.innerHTML = text.replace(/\n/g, "<br>");
+
+        // 💡 Zentrierter Text + rechter Sort-Pfeil
+        th.innerHTML = `
+            <th>
+            <div class="header-wrapper">
+                <div class="header-text-wrapper">
+                    <div class="header-text">${header.label.replace(/\n/g, "<br>")}</div>
+                    <div class="sort-icon">↕</div>
+                </div>
+            </div>
+            </th>
+        `;
+
+
+
+        th.style.cursor = "pointer";
+
+        th.addEventListener("click", () => {
+            if (currentSort.column === index) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.column = index;
+                currentSort.asc = true;
+            }
+
+            sortTableByColumn(index, currentSort.asc);
+            renderTableBody(table.querySelector("tbody"));
+            updateSortIcons(thead, index, currentSort.asc);
+        });
+
         headerRow.appendChild(th);
     });
+
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
@@ -47,70 +100,40 @@ function setupBlockchainStats() {
 
     container.appendChild(table);
 
-    loadBlockchainStats(tbody);
-
-    setupBlockchainStatsPopup();
+    await loadBlockchainStats(tbody);
 }
+
 
 
 async function loadBlockchainStats(tbody) {
-
     tbody.innerHTML = '';
 
-    for (const [key, chain] of Object.entries(CONFIG.chains)) {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${chain.name}</td><td colspan='18'>Loading...</td>`;
-        tbody.appendChild(row);
+    try {
+        const response = await fetch(`http://localhost:3001/getBlockchainStats/${connectedWalletAddress}`);
+        const result = await response.json();
 
-        try {
-            let storedStats = JSON.parse(localStorage.getItem("blockchainStats")) || {};
-            let stats = storedStats[chain.name] || null;
-
-            // If no stored data is available, retrieve on-chain
-            if (!stats) {
-                console.log(`🔍 Keine gespeicherten Daten für ${chain.name}, hole on-chain...`);
-                stats = await fetchBlockchainStats(chain);
-
-                if (stats) {
-                    saveBlockchainStats(chain, stats);
-                }
-            } else {
-                //   console.log(`✅ Geladene gespeicherte Daten für ${chain.name}`);
-            }
-
-            if (!stats) {
-                row.innerHTML = `<td>${chain.name}</td><td colspan='18'>No Transactions</td>`;
-                continue;
-            }
-
-            // Fill table with data
-            row.innerHTML = `
-                <td class="clickable-chain" onclick="setupBlockchainStatsPopup('${chain.name}')">${chain.name}</td>
-                <td>${stats.totalTx}</td>
-                <td>${stats.erc20SentTx}</td>
-                <td>${stats.erc20ReceivedTx}</td>
-                <td>${stats.uniqueNftSentTx}</td>
-                <td>${stats.erc721uniqueReceivedTx}</td>
-                <td>${stats.failedTx}</td>
-                <td>${stats.successRate}%</td>
-                <td>${stats.firstTxDate}</td>
-                <td>${stats.lastTxDate}</td>
-                <td>${stats.mostActiveDay}</td>
-                <td>${stats.mostActiveMonth}</td>
-                <td>${stats.currentStreak}</td>
-                <td>${stats.longestStreak}</td>
-                <td>${stats.daysUsed}</td>
-                <td>${stats.weeksUsed}</td>
-                <td>${stats.monthsUsed}</td>
-                <td>${stats.yearsUsed}</td>
-            `;
-        } catch (error) {
-            console.error(`❌ Fehler beim Laden von ${chain.name}:`, error);
-            row.innerHTML = `<td>${chain.name}</td><td colspan='18'>Error loading data</td>`;
+        if (result.success) {
+            sessionStorage.setItem(`blockchainStats_${connectedWalletAddress}`, JSON.stringify(result.data));
+        } else {
+            console.error("Error retrieving blockchain data:", result.message);
+            return;
         }
+    } catch (error) {
+        console.error("❌ Error retrieving blockchain data:", error);
+        return;
     }
-}
 
+    const allData = JSON.parse(sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`));
+    const selectedChains = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]");
+
+    blockchainTableData = selectedChains.map(key => {
+        const chainInfo = CONFIG.chains[key];
+        const data = allData.find(d => d.chain === chainInfo.name) || {};
+        return { chain: chainInfo.name, ...data };
+    });
+
+    renderTableBody(tbody);
+}
 
 
 async function fetchBlockchainStats(chain) {
@@ -120,10 +143,10 @@ async function fetchBlockchainStats(chain) {
     const chainName = typeof chain === "object" ? chain.name : chain;
 
 
-    const response = await fetch(`api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
+    const response = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlist&address=${connectedWalletAddress}`);
     const data = await response.json();
 
-    const responseInternal = await fetch(`api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
+    const responseInternal = await fetch(`http://localhost:3001/api/proxy?chain=${chainName}&type=txlistinternal&address=${connectedWalletAddress}`);
     const dataInternal = await responseInternal.json();
 
     /*
@@ -143,19 +166,19 @@ async function fetchBlockchainStats(chain) {
 
     const transactions = data.txlist?.result ?? [];  // Use empty array if undefined
     const internalTransactions = dataInternal.txlistinternal?.result ?? [];  // Use empty array if undefined
-    
+
     if (!Array.isArray(transactions)) {
         console.warn(`⚠️ 'transactions' is not an array for ${chain.name}.`);
         return;
     }
-    
+
     if (!Array.isArray(internalTransactions)) {
         console.warn(`⚠️ 'internalTransactions' is not an array for ${chain.name}.`);
         return;
     }
-    
+
     const allTransactions = [...transactions, ...internalTransactions];
-    
+
     allTransactions.sort((a, b) => Number(a.blockNumber) - Number(b.blockNumber));
 
     const sentTx = allTransactions.filter(tx => tx.from.toLowerCase() === connectedWalletAddress.toLowerCase());
@@ -166,12 +189,12 @@ async function fetchBlockchainStats(chain) {
     const failedTx = transactions.filter(tx => tx.isError === "1").length;
     const successRate = ((totalTx - failedTx) / totalTx * 100).toFixed(2);
 
-/*
-    console.log("📤 Sent Transactions:", sentTx);
-    console.log("📊 Total Transactions:", totalTx);
-    console.log("❌ Failed Transactions:", failedTx);
-    console.log("✅ Success Rate:", successRate + "%");
-*/
+    /*
+        console.log("📤 Sent Transactions:", sentTx);
+        console.log("📊 Total Transactions:", totalTx);
+        console.log("❌ Failed Transactions:", failedTx);
+        console.log("✅ Success Rate:", successRate + "%");
+    */
 
     let erc20SentTx = 0, erc20ReceivedTx = 0, erc20uniqueSent = 0, erc20uniqueReceived = 0;
     let erc721SentTx = 0, erc721ReceivedTx = 0, erc721uniqueSentTx = 0, erc721uniqueReceivedTx = 0;
@@ -231,58 +254,17 @@ async function fetchBlockchainStats(chain) {
         return;
     }
 
-    transactions.sort((a, b) => a.timeStamp - b.timeStamp);
-
-    const firstTxDate = new Date(transactions[0].timeStamp * 1000);
-    const lastTxDate = new Date(transactions[transactions.length - 1].timeStamp * 1000);
-
+  
     const dateArray = transactions.map(tx => new Date(tx.timeStamp * 1000).toISOString().split("T")[0]);
-    const dateSet = new Set(dateArray);
-    const daysUsed = dateSet.size;
-
-    const uniqueWeeks = new Set([...dateSet].map(d => {
-        const date = new Date(d);
-        const startOfYear = new Date(date.getFullYear(), 0, 1);
-        const weekNumber = Math.ceil((((date - startOfYear) / (1000 * 60 * 60 * 24)) + startOfYear.getDay() + 1) / 7);
-        return `${date.getFullYear()}-W${weekNumber}`;
-    }));
-    const weeksUsed = uniqueWeeks.size;
-    const monthsUsed = new Set([...dateSet].map(d => d.slice(0, 7))).size;
-    const yearsUsed = new Set([...dateSet].map(d => d.slice(0, 4))).size;
-
     const dailyTxCounts = {};
     dateArray.forEach(date => {
         dailyTxCounts[date] = (dailyTxCounts[date] || 0) + 1;
     });
 
-    const mostActiveDay = Object.keys(dailyTxCounts).reduce((a, b) => dailyTxCounts[a] > dailyTxCounts[b] ? a : b, "-");
-    const monthCounts = {};
-    [...dateSet].forEach(date => {
-        monthCounts[date.slice(0, 7)] = (monthCounts[date.slice(0, 7)] || 0) + 1;
-    });
-
-    const mostActiveMonth = Object.keys(monthCounts).length > 0
-        ? Object.keys(monthCounts).reduce((a, b) => monthCounts[a] > monthCounts[b] ? a : b)
-        : "-";
-
-    const sortedDates = [...dateSet].map(d => new Date(d)).sort((a, b) => a - b);
-    let longestStreak = 1, currentStreak = 1;
-    for (let i = 1; i < sortedDates.length; i++) {
-        const prevDate = sortedDates[i - 1];
-        const currDate = sortedDates[i];
-        const diff = (currDate - prevDate) / (1000 * 60 * 60 * 24);
-        if (diff === 1) {
-            currentStreak++;
-            longestStreak = Math.max(longestStreak, currentStreak);
-        } else {
-            currentStreak = 1;
-        }
-    }
-
     const stats = {
         totalTx,
         failedTx,
-        successRate,
+        successRate: formatPercentage(successRate),
         erc20SentTx,
         erc20uniqueSent,
         erc20ReceivedTx,
@@ -299,71 +281,54 @@ async function fetchBlockchainStats(chain) {
         uniqueNftSentTx,
         nftReceivedTx,
         uniqueNftReceivedTx,
-        firstTxDate: firstTxDate.toLocaleDateString(),
-        lastTxDate: lastTxDate.toLocaleDateString(),
-        mostActiveDay,
-        mostActiveMonth,
-        currentStreak,
-        longestStreak,
-        daysUsed,
-        weeksUsed,
-        monthsUsed,
-        yearsUsed,
         dailyTxCounts
     };
 
+    //   console.log('Generated stats:', stats);
 
-    await saveBlockchainStats(chain, stats);
+    await saveBlockchainStats(connectedWalletAddress, chain.name, stats);
     return stats;
 }
 
-async function saveBlockchainStats(chain, stats) {
-    const storedData = JSON.parse(localStorage.getItem("blockchainStats")) || {};
 
-    if (!storedData[chain.name]) {
-        storedData[chain.name] = {
-            totalTx: 0,
-            failedTx: 0,
-            successRate: "0.00",
-            erc20SentTx: 0,
-            erc20uniqueSent: 0,
-            erc20ReceivedTx: 0,
-            erc20uniqueReceived: 0,
-            erc721SentTx: 0,
-            erc721uniqueSentTx: 0,
-            erc721ReceivedTx: 0,
-            erc721uniqueReceivedTx: 0,
-            erc1155SentTx: 0,
-            erc1155uniqueSentTx: 0,
-            erc1155ReceivedTx: 0,
-            erc1155uniqueReceivedTx: 0,
-            nftSentTx: 0,
-            uniqueNftSentTx: 0,
-            nftReceivedTx: 0,
-            uniqueNftReceivedTx: 0,
-            firstTxDate: "-",
-            lastTxDate: "-",
-            mostActiveDay: "-",
-            mostActiveMonth: "-",
-            currentStreak: 0,
-            longestStreak: 0,
-            daysUsed: 0,
-            weeksUsed: 0,
-            monthsUsed: 0,
-            yearsUsed: 0,
-            dailyTxCounts: {}
-        };
+const formatDateForDB = (date) => {
+    return date instanceof Date
+        ? date.toISOString().split('T')[0]  // YYYY-MM-DD
+        : null;
+};
+
+const formatPercentage = (value) => {
+    return typeof value === "string" ? parseFloat(value) : value;
+};
+
+
+
+async function saveBlockchainStats(wallet, chain, stats) {
+
+    //  console.log("Wallet:", wallet);
+    //  console.log("chain:", chain);
+    //  console.log("Received stats:", stats);
+
+    try {
+        const response = await fetch("http://localhost:3001/saveBlockchainStats", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ wallet, chain, stats }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            console.log("✅ Blockchain stats saved successfully. Full response:", data);
+        } else {
+            console.error("❌ Error saving blockchain stats:", data.error);
+        }
+    } catch (error) {
+        console.error("❌ Network or server error:", error);
     }
-
-    storedData[chain.name] = {
-        ...storedData[chain.name],
-        ...stats,
-    };
-
-    storedData[chain.name].dailyTxCounts = stats.dailyTxCounts;
-
-    localStorage.setItem("blockchainStats", JSON.stringify(storedData));
 }
+
 
 
 function delay(ms) {
@@ -374,7 +339,7 @@ function delay(ms) {
 async function fetchERC20Transactions(chain) {
     await delay(200);
 
-    const url = `api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
+    const url = `http://localhost:3001/api/erc20-transactions?chain=${chain.name}&address=${connectedWalletAddress}`;
 
     try {
         const response = await fetch(url);
@@ -403,7 +368,7 @@ async function fetchERC20Transactions(chain) {
         let uniqueSentCount = uniqueSent.size;
         let uniqueReceivedCount = uniqueReceived.size;
 
-   //     console.log(`✅ ${chain.name}: ERC-20 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
+        //     console.log(`✅ ${chain.name}: ERC-20 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
         return { sent: sentCount, received: receivedCount, uniqueSent: uniqueSentCount, uniqueReceived: uniqueReceivedCount };
 
     } catch (error) {
@@ -419,7 +384,7 @@ async function fetchERC721Transactions(chain) {
     await delay(300);
 
     try {
-        const response = await fetch(`api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`http://localhost:3001/api/erc721-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
 
         if (!Array.isArray(data)) {
@@ -448,7 +413,7 @@ async function fetchERC721Transactions(chain) {
         let uniqueSentCount = uniqueSentHashes.size;
         let uniqueReceivedCount = uniqueReceivedHashes.size;
 
-    //    console.log(`✅ ${chain.name}: ERC-721 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
+        //    console.log(`✅ ${chain.name}: ERC-721 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
 
         return {
             sent: sentCount,
@@ -470,9 +435,9 @@ async function fetchERC1155Transactions(chain) {
     await delay(400);
 
     try {
-        const response = await fetch(`api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
+        const response = await fetch(`http://localhost:3001/api/erc1155-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
         const data = await response.json();
-    //    console.log(`🔍 API Antwort für ${chain.name}:`, data);
+        //    console.log(`🔍 API Antwort für ${chain.name}:`, data);
 
         if (!Array.isArray(data)) {
             console.warn(`⚠️ No valid result for ${chain.name}.`);
@@ -500,7 +465,7 @@ async function fetchERC1155Transactions(chain) {
         let uniqueSentCount = uniqueSentHashes.size;
         let uniqueReceivedCount = uniqueReceivedHashes.size;
 
-    //    console.log(`✅ ${chain.name}: ERC-1155 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
+        //    console.log(`✅ ${chain.name}: ERC-1155 TX - Sent: ${sentCount} (Unique: ${uniqueSentCount}), Received: ${receivedCount} (Unique: ${uniqueReceivedCount})`);
 
         return {
             sent: sentCount,
@@ -532,18 +497,23 @@ async function updateBlockchainStats() {
 
     try {
         // Starte alle API-Requests parallel
-        const fetchPromises = Object.entries(CONFIG.chains).map(async ([key, chain]) => {
-            try {
-                const stats = await fetchBlockchainStats(chain);
-                if (!stats) {
-                    console.warn(`⚠️ No valid data received for ${chain.name}.`);
-                } else {
-                    console.log(`✅ Data received for ${chain.name}`);
+        const selectedChains = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]");
+
+        const fetchPromises = Object.entries(CONFIG.chains)
+            .filter(([key]) => selectedChains.includes(key))
+            .map(async ([key, chain]) => {
+
+                try {
+                    const stats = await fetchBlockchainStats(chain);
+                    if (!stats) {
+                        console.warn(`⚠️ No valid data received for ${chain.name}.`);
+                    } else {
+                        console.log(`✅ Data received for ${chain.name}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ Error updating stats for ${chain.name}:`, error);
                 }
-            } catch (error) {
-                console.error(`❌ Error updating stats for ${chain.name}:`, error);
-            }
-        });
+            });
 
         // Warte, bis alle Requests abgeschlossen sind
         await Promise.all(fetchPromises);
@@ -571,12 +541,22 @@ async function updateBlockchainStats() {
 // const calendarBlockchainStats = JSON.parse(localStorage.getItem("blockchainStats"));
 // console.log(calendarBlockchainStats);
 
-function setupBlockchainStatsPopup(chainName) {
+async function setupBlockchainStatsPopup(chainName) {
+
+
+    let userLocale = navigator.language || "en-US";
+    let formatNumber = (num, digits = 0) =>
+        new Intl.NumberFormat(userLocale, {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        }).format(num);
+
+
+
     let blockchainstats_popupOverlay = document.getElementById("blockchainstats-popup-overlay");
-    const blockchainstats_popupTitle = document.getElementById("blockchainstats-popup-title");
-    if (blockchainstats_popupTitle) {
-        blockchainstats_popupTitle.textContent = `Total TX per Month (${chainName})`;
-    }
+
+
+
     if (!blockchainstats_popupOverlay) {
         blockchainstats_popupOverlay = document.createElement("div");
         blockchainstats_popupOverlay.id = "blockchainstats-popup-overlay";
@@ -608,75 +588,182 @@ function setupBlockchainStatsPopup(chainName) {
         });
     }
 
-    // This ensures that the element exists!
     let blockchainstats_popupDetails = document.getElementById("blockchainstats-popup-details");
     if (!blockchainstats_popupDetails) {
         console.error("Missing element: blockchainstats-popup-details");
         return;
     }
 
-    const dailyTxCounts = getDailyTxCountsForChain(chainName);
+    // ✅ Fix: Vor dem neuen Einfügen den Inhalt leeren
+    blockchainstats_popupDetails.innerHTML = "";
 
-    if (!dailyTxCounts || Object.keys(dailyTxCounts).length === 0) {
-        console.warn(`No daily transactions found for chain "${chainName}".`);
-        return;
+    let chainStats = {};
+    let dailyTxCounts = {};
+
+    try {
+        // Fetch the chain data from the API
+        // Überprüfe, ob die Daten im sessionStorage vorhanden sind
+
+        const cachedData = sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`);
+
+        if (cachedData) {
+            console.log("Daten aus dem Cache geladen.");
+            const allData = JSON.parse(cachedData);
+
+            // Suche die Daten für den spezifischen Chain
+            const chainData = allData.find(item => item.chain === chainName);
+
+            if (chainData) {
+                result = chainData;
+            } else {
+                console.log("Keine Daten für diesen Chain im Cache gefunden, hole sie von der API.");
+                // Hole die Daten von der API, wenn sie im Cache nicht vorhanden sind
+
+                const response = await fetch(`http://localhost:3001/getChainStats/${connectedWalletAddress}/${chainName}`);
+                const apiResult = await response.json();
+
+                // Check if the API response is successful
+                if (!apiResult.success) { // Fehlerbehandlung für die API-Antwort
+                    console.error("❌ Error: API did not return valid data.");
+                    return;
+                }
+                if (apiResult.success) {
+                    // Speichere die erhaltenen Daten im sessionStorage für zukünftige Anfragen
+                    const existingData = sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`);
+                    const allData = existingData ? JSON.parse(existingData) : [];
+
+                    // Füge die neuen Daten zum bestehenden Cache hinzu
+                    allData.push(apiResult.data);
+                    sessionStorage.setItem(`blockchainStats_${connectedWalletAddress}`, JSON.stringify(allData));
+
+                    result = apiResult.data;
+                } else {
+                    console.error("Fehler beim Abrufen der Daten von der API.");
+                    return null;  // Oder handle den Fehler nach deinen Bedürfnissen
+                }
+            }
+        } else {
+            console.log("Keine Daten für diesen Chain im Cache gefunden, hole sie von der API.");
+            // Hole die Daten von der API, wenn sie im Cache nicht vorhanden sind
+
+            const response = await fetch(`http://localhost:3001/getChainStats/${connectedWalletAddress}/${chainName}`);
+            const apiResult = await response.json();
+
+            // Check if the API response is successful
+            if (!apiResult.success) { // Fehlerbehandlung für die API-Antwort
+                console.error("❌ Error: API did not return valid data.");
+                return;
+            }
+            if (apiResult.success) {
+                // Speichere die erhaltenen Daten im sessionStorage für zukünftige Anfragen
+                const existingData = sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`);
+                const allData = existingData ? JSON.parse(existingData) : [];
+
+                // Füge die neuen Daten zum bestehenden Cache hinzu
+                allData.push(apiResult.data);
+                sessionStorage.setItem(`blockchainStats_${connectedWalletAddress}`, JSON.stringify(allData));
+
+                result = apiResult.data;
+            } else {
+                console.error("Fehler beim Abrufen der Daten von der API.");
+                return null;  // Oder handle den Fehler nach deinen Bedürfnissen
+            }
+        }
+
+
+        // Log the full API response
+        //    console.log("API Response:", result);
+
+        // Extract the relevant data
+        chainStats = result;
+        dailyTxCounts = chainStats.daily_tx_counts || {};
+        console.log("Successfully retrieved dailyTxCounts for chain:", chainName);
+
+    } catch (error) {
+        console.error("❌ Error fetching chain data:", error);
     }
 
-  //  console.log(`Popup for chain "${chainName}" is displayed.`);
-    let userLocale = navigator.language || "en-US";
-    let formatNumber = (num) => new Intl.NumberFormat(userLocale).format(num);
-    let chainStats = JSON.parse(localStorage.getItem("blockchainStats") || "{}")[chainName] || {};
 
-    blockchainstats_popupDetails.innerHTML = `
+
+    let walletAgeDays = Math.floor((new Date() - new Date(chainStats.firsttxdate)) / (1000 * 60 * 60 * 24));
+    let avgPerDay = chainStats.daysused ? chainStats.total_tx / chainStats.daysused : 0;
+
+    const summaryHTML = `
+                    <h2 id="blockchainstats-popup-summary">
+                    ${formatNumber(chainStats.total_tx)} transactions across ${formatNumber(chainStats.daysused)} unique days on ${chainName}, averaging ${formatNumber(avgPerDay, 2)} per day.
+                    </h2>
+                    <p><strong>Total TX per Month:</strong></p>
+                `;
+
+
+
+    blockchainstats_popupDetails.innerHTML += `
+
+            ${summaryHTML}
+
+
         <div id="monthly-transactions-raster">
             <table id="transactions-raster">
                 <thead>
                     <tr>
-                    <th>${yearLabel}</th>
-                    ${localizedMonths.map(month => `<th>${month}</th>`).join("")}
+                        <th>${yearLabel}</th>
+                        ${localizedMonths.map(month => `<th>${month}</th>`).join("")}
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
 
-<h3>Transaction Breakdown by Token Type</h3>
-
-                <table id="transactions-raster">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Sent</th>
-                    <th>Unique Sent</th>
-                    <th>Received</th>
-                    <th>Unique Received</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <th>ERC-20</th>
-                    <td>${formatNumber(chainStats.erc20SentTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc20uniqueSent || 0)}</td>
-                    <td>${formatNumber(chainStats.erc20ReceivedTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc20uniqueReceived || 0)}</td>
-                </tr>
-                <tr>
-                    <th>ERC-721</th>
-                    <td>${formatNumber(chainStats.erc721SentTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc721uniqueSentTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc721ReceivedTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc721uniqueReceivedTx || 0)}</td>
-                </tr>
-                <tr>
-                    <th>ERC-1155</th>
-                    <td>${formatNumber(chainStats.erc1155SentTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc1155uniqueSentTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc1155ReceivedTx || 0)}</td>
-                    <td>${formatNumber(chainStats.erc1155uniqueReceivedTx || 0)}</td>
+            <h3>Transaction Breakdown by Token Type</h3>
+            <table id="transactions-raster">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Sent</th>
+                        <th>Unique Sent</th>
+                        <th>Received</th>
+                        <th>Unique Received</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>ERC-20</th>
+                        <td>${formatNumber(chainStats.erc20_sent_tx || 0)}</td>
+                        <td>${formatNumber(chainStats.erc20_unique_sent || 0)}</td>
+                        <td>${formatNumber(chainStats.erc20_received_tx || 0)}</td>
+                        <td>${formatNumber(chainStats.erc20_unique_received || 0)}</td>
+                    </tr>
+                    <tr>
+                        <th>ERC-721</th>
+                        <td>${formatNumber(chainStats.erc721_sent || 0)}</td>
+                        <td>${formatNumber(chainStats.erc721_unique_sent || 0)}</td>
+                        <td>${formatNumber(chainStats.erc721_received || 0)}</td>
+                        <td>${formatNumber(chainStats.erc721_unique_received || 0)}</td>
+                    </tr>
+                    <tr>
+                        <th>ERC-1155</th>
+                        <td>${formatNumber(chainStats.erc1155_sent || 0)}</td>
+                        <td>${formatNumber(chainStats.erc1155_unique_sent_tx || 0)}</td>
+                        <td>${formatNumber(chainStats.erc1155_received || 0)}</td>
+                        <td>${formatNumber(chainStats.erc1155__unique_received || 0)}</td>
+                    </tr>
+                    <tr>
+                    <td>NFTs</td>
+                    <td>${formatNumber(chainStats.nft_sent_tx || 0)}</td>
+                    <td>${formatNumber(chainStats.unique_nft_sent_tx || 0)}</td>
+                    <td>${formatNumber(chainStats.nft_received_tx || 0)}</td>
+                    <td>${formatNumber(chainStats.unique_nft_received_tx || 0)}</td>
                 </tr>
             </tbody>
         </table>
-
-        </div> 
+        <br>
+        <h2>Other Statistics</h2>
+        <p><strong>Wallet Age:</strong> ${formatNumber(walletAgeDays || 0)}</p>
+        <p><strong>First Transaction:</strong> ${chainStats.firsttxdate}</p>
+        <p><strong>Total Transactions:</strong> ${formatNumber(chainStats.total_tx || 0)}</p>
+        <p><strong>Failed Transactions:</strong> ${formatNumber(chainStats.failed_tx || 0)}</p>
+                </tbody>
+            </table>
+        </div>
 
         <div id="daily-transactions-calendar" style="display:none;">
             <div id="calendar-header">
@@ -687,13 +774,15 @@ function setupBlockchainStatsPopup(chainName) {
         </div>
     `;
 
+
+    console.log("let dailyTxCounts22:", dailyTxCounts);
+
     createMonthlyTransactionsRaster(dailyTxCounts, chainName);
-    createDailyTransactionsCalendar(dailyTxCounts);
-
-  //  console.log(`Popup für die Chain "${chainName}" wird angezeigt.`);
-    blockchainstats_popupOverlay.style.display = "block"; // Make popup visible
-
+    blockchainstats_popupOverlay.style.display = "block"; // Popup sichtbar machen
 }
+
+
+
 
 function getLocalizedMonthNames() {
     const formatter = new Intl.DateTimeFormat(navigator.language, { month: "short" });
@@ -742,7 +831,7 @@ function createMonthlyTransactionsRaster(dailyTxCounts, chainName) {
             row.appendChild(cell);
 
             cell.addEventListener("click", () => {
-                showDailyTransactionsForMonth(year, month, chainName);
+                showDailyTransactionsForMonth(year, month, chainName, dailyTxCounts);
             });
 
 
@@ -754,91 +843,8 @@ function createMonthlyTransactionsRaster(dailyTxCounts, chainName) {
 
 
 
-function getDailyTxCountsForChain(chainName) {
- //   console.log(`getDailyTxCountsForChain aufgerufen mit Chain: "${chainName}"`);
-
-    // Prüfe, ob Daten im localStorage existieren
-    const rawData = localStorage.getItem("blockchainStats");
-    if (!rawData) {
-        console.warn("⚠️ Keine Blockchain-Statistiken im localStorage gefunden.");
-        return {};
-    }
-
-    //console.log("📂 Rohdaten aus localStorage geladen:", rawData);
-
-    // JSON-Daten parsen
-    let blockchainStatsdaily;
-    try {
-        blockchainStatsdaily = JSON.parse(rawData);
-    } catch (error) {
-        console.error("❌ Fehler beim Parsen der localStorage-Daten:", error);
-        return {};
-    }
-
-    // Prüfen, ob die spezifische Chain existiert
-    if (!blockchainStatsdaily || typeof blockchainStatsdaily !== "object") {
-        console.error("❌ Unerwartetes Datenformat für blockchainStats:", blockchainStatsdaily);
-        return {};
-    }
-
-    if (!blockchainStatsdaily[chainName]) {
-        console.warn(`⚠️ Keine Daten für die Chain "${chainName}" gefunden.`);
-   //     console.log("📌 Verfügbare Chains im localStorage:", Object.keys(blockchainStatsdaily));
-        return {};
-    }
-
-    // Sicherstellen, dass `dailyTxCounts` existiert
-    if (!blockchainStatsdaily[chainName].dailyTxCounts) {
-        console.warn(`⚠️ Kein "dailyTxCounts" für "${chainName}" vorhanden.`);
-  //      console.log("📌 Vorhandene Daten für diese Chain:", blockchainStatsdaily[chainName]);
-        return {};
-    }
-
- //   console.log(`✅ Daten für Chain "${chainName}" erfolgreich abgerufen:`, blockchainStatsdaily[chainName].dailyTxCounts);
-    return blockchainStatsdaily[chainName].dailyTxCounts;
-}
 
 
-function createDailyTransactionsCalendar(dailyTxCounts) {
-    const calendarGrid = document.getElementById("calendar-grid");
-    const calendarTitle = document.getElementById("calendar-title");
-
-    calendarGrid.innerHTML = '';  // Leere den Kalender
-    calendarTitle.textContent = `Tägliche Transaktionen`;
-
-  //  console.log("Erstelle Kalenderansicht für tägliche Transaktionen.");
-
-    // Erstelle die Kalenderstruktur (hier für den aktuellen Monat)
-    const currentMonth = new Date().getMonth();  // Aktuellen Monat holen
-    const currentYear = new Date().getFullYear();  // Aktuelles Jahr holen
-
-    // Bestimme den ersten und letzten Tag des Monats
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
-
-    // Die Anzahl der Tage im aktuellen Monat
-    const daysInMonth = lastDayOfMonth.getDate();
-
-    let gridContent = '';
-
-    // Erstelle die Tage des Monats
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateKey = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const txCount = dailyTxCounts[dateKey] || 0;
-
-        gridContent += `
-            <div class="calendar-day">
-                <span class="calendar-day-number">${day}</span>
-                <span class="calendar-tx-count">${txCount}</span>
-            </div>
-        `;
-
-        //  console.log(`Datum: ${dateKey}, Transaktionen: ${txCount}`);
-    }
-
-    calendarGrid.innerHTML = gridContent;
- //   console.log("Kalenderansicht wurde befüllt.");
-}
 
 
 function closeCalendar() {
@@ -846,39 +852,52 @@ function closeCalendar() {
     document.getElementById("monthly-transactions-raster").style.display = "block";
 }
 
+function closeTotalCalendar() {
+    document.getElementById("total-daily-transactions-calendar").style.display = "none";
+    document.getElementById("total-transactions-raster").style.display = "block";
+}
 
-// document.addEventListener("DOMContentLoaded", createMonthlyTransactionsRaster);
 
 
-function showDailyTransactionsForMonth(year, month, chainName) {
-    const dailyTxCounts = getDailyTxCountsForChain(chainName);
+function showDailyTransactionsForMonth(year, month, chainName, dailyTxCounts) {
+    // 1. Bestimme den ersten und letzten Tag des Monats
+    const firstDayOfMonth = new Date(year, month - 1, 1);  // Monat ist 0-basiert
+    const lastDayOfMonth = new Date(year, month, 0); // Der letzte Tag des Monats
+    const daysInMonth = lastDayOfMonth.getDate();  // Anzahl der Tage im Monat
 
-    const dailyTransactions = Object.entries(dailyTxCounts)
-        .filter(([date, count]) => date.startsWith(`${year}-${month.toString().padStart(2, "0")}`))
-        .map(([date, count]) => ({ date, count }));
-
- //  console.log(`Tägliche Transaktionen für ${month}/${year} auf ${chainName}:`, dailyTransactions);
-
+    // 2. Zeige den Monatsnamen
     document.getElementById("calendar-title").textContent = `Daily Transactions: ${chainName} (${month}/${year})`;
 
     const calendarGrid = document.getElementById("calendar-grid");
-    calendarGrid.innerHTML = ""; // Reset
+    calendarGrid.innerHTML = ""; // Kalender zurücksetzen
 
-    dailyTransactions.forEach(({ date, count }) => {
+    // 3. Erstelle für jeden Tag des Monats ein Element
+    for (let day = 1; day <= daysInMonth; day++) {
+        // Generiere das Datum im Format YYYY-MM-DD
+        const dateKey = `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+
+        // Hole die Transaktionsanzahl oder setze sie auf 0, falls nicht vorhanden
+        const count = dailyTxCounts[dateKey] || 0;
+
+        // Erstelle ein neues Element für den Tag
         const dayElement = document.createElement("div");
         dayElement.classList.add("calendar-day");
         dayElement.innerHTML = `
-        <div class="day-box">
-            <span class="day-number">${date.split("-")[2]}</span>
-            <span class="tx-count">${count}</span>
-        </div>
-    `;
-        calendarGrid.appendChild(dayElement);
-    });
+            <div class="day-box">
+                <span class="day-number">${day}</span>
+                <span class="tx-count">${count}</span>
+            </div>
+        `;
 
+        // Füge das neue Tag-Element in das Kalender-Grid ein
+        calendarGrid.appendChild(dayElement);
+    }
+
+    // Kalender anzeigen und andere Elemente ausblenden
     document.getElementById("monthly-transactions-raster").style.display = "none";
     document.getElementById("daily-transactions-calendar").style.display = "block";
 }
+
 
 
 function totalSetupPopup() {
@@ -898,6 +917,11 @@ function totalSetupPopup() {
         totalCloseButton.classList.add("blockchainstats-popup-close");
         totalCloseButton.textContent = "×";
         totalPopupContent.appendChild(totalCloseButton);
+
+        const totalPopupHeader = document.createElement("h2");
+        totalPopupHeader.id = "total-popup-summary";
+        totalPopupHeader.textContent = ""; // Inhalt wird später gesetzt
+        totalPopupContent.appendChild(totalPopupHeader);
 
         const totalPopupTitle = document.createElement("h3");
         totalPopupTitle.id = "total-popup-title";
@@ -924,7 +948,7 @@ function totalSetupPopup() {
 
     // **Gesamte Transaktionen abrufen & Tabelle erstellen**
     const totalTxCounts = totalGetTxCounts(); // Aggregierte Daten abrufen
-  //  console.log("Gesamte Transaktionsdaten:", totalTxCounts);
+    //  console.log("Gesamte Transaktionsdaten:", totalTxCounts);
 
     if (!totalTxCounts || Object.keys(totalTxCounts).length === 0) {
         console.warn("Keine Daten für Total Stats gefunden.");
@@ -934,6 +958,14 @@ function totalSetupPopup() {
     let userLocale = navigator.language || "en-US";
     let formatNumber = (num) => new Intl.NumberFormat(userLocale).format(num);
     const summedStats = sumBlockchainStats();
+
+    console.log("summedStats:", summedStats);
+
+
+    const summaryText = `${formatNumber(summedStats.total_tx || 0)} transactions over ${formatNumber(summedStats.total_days_used || 0)} unique days, across ${formatNumber(summedStats.chains_used || 0)} chains – average of ${formatNumber(summedStats.avg_tx_per_day || 0)} per day.`;
+    document.getElementById("total-popup-summary").textContent = summaryText;
+
+
 
     totalPopupDetails.innerHTML = `
     <div id="total-transactions-raster">
@@ -961,35 +993,40 @@ function totalSetupPopup() {
             <tbody>
                 <tr>
                     <td>ERC-20</td>
-                    <td>${formatNumber(summedStats.erc20SentTx)}</td>
-                    <td>${formatNumber(summedStats.erc20uniqueSent)}</td>
-                    <td>${formatNumber(summedStats.erc20ReceivedTx)}</td>
-                    <td>${formatNumber(summedStats.erc20uniqueReceived)}</td>
+                    <td>${formatNumber(summedStats.erc20_sent_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.erc20_unique_sent || 0)}</td>
+                    <td>${formatNumber(summedStats.erc20_received_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.erc20_unique_received || 0)}</td>
                 </tr>
                 <tr>
                     <td>ERC-721</td>
-                    <td>${formatNumber(summedStats.erc721SentTx)}</td>
-                    <td>${formatNumber(summedStats.erc721uniqueSentTx)}</td>
-                    <td>${formatNumber(summedStats.erc721ReceivedTx)}</td>
-                    <td>${formatNumber(summedStats.erc721uniqueReceivedTx)}</td>
+                    <td>${formatNumber(summedStats.erc721_sent || 0)}</td>
+                    <td>${formatNumber(summedStats.erc721_unique_sent || 0)}</td>
+                    <td>${formatNumber(summedStats.erc721_received || 0)}</td>
+                    <td>${formatNumber(summedStats.erc721_unique_received || 0)}</td>
                 </tr>
                 <tr>
                     <td>ERC-1155</td>
-                    <td>${formatNumber(summedStats.erc1155SentTx)}</td>
-                    <td>${formatNumber(summedStats.erc1155uniqueSentTx)}</td>
-                    <td>${formatNumber(summedStats.erc1155ReceivedTx)}</td>
-                    <td>${formatNumber(summedStats.erc1155uniqueReceivedTx)}</td>
+                    <td>${formatNumber(summedStats.erc1155_sent || 0)}</td>
+                    <td>${formatNumber(summedStats.erc1155_unique_sent_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.erc1155_received || 0)}</td>
+                    <td>${formatNumber(summedStats.erc1155_unique_received || 0)}</td>
+                </tr>
+                <tr>
+                    <td>NFTs</td>
+                    <td>${formatNumber(summedStats.nft_sent_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.unique_nft_sent_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.nft_received_tx || 0)}</td>
+                    <td>${formatNumber(summedStats.unique_nft_received_tx || 0)}</td>
                 </tr>
             </tbody>
         </table>
         <br>
         <h2>Other Statistics</h2>
-        <p><strong>Total Transactions:</strong> ${formatNumber(summedStats.totalTx)}</p>
-        <p><strong>Failed Transactions:</strong> ${formatNumber(summedStats.failedTx)}</p>
-        <p><strong>NFT Sent:</strong> ${formatNumber(summedStats.nftSentTx)}</p>
-        <p><strong>NFT Received:</strong> ${formatNumber(summedStats.nftReceivedTx)}</p>
-        <p><strong>Unique NFTs Sent:</strong> ${formatNumber(summedStats.uniqueNftSentTx)}</p>
-        <p><strong>Unique NFTs Received:</strong> ${formatNumber(summedStats.uniqueNftReceivedTx)}</p>
+        <p><strong>Wallet Age:</strong> ${formatNumber(summedStats.wallet_age_days || 0)}</p>
+        <p><strong>First Transaction:</strong> ${summedStats.wallet_first_tx_date}</p>
+        <p><strong>Total Transactions:</strong> ${formatNumber(summedStats.total_tx || 0)}</p>
+        <p><strong>Failed Transactions:</strong> ${formatNumber(summedStats.failed_tx || 0)}</p>
 
     </div>
     <div id="total-daily-transactions-calendar" style="display:none;">
@@ -1001,21 +1038,28 @@ function totalSetupPopup() {
     </div>
 `;
 
-
     totalCreateTxTable(totalTxCounts);
     totalPopupOverlay.style.display = "block"; // Popup öffnen
 }
 
 
 function totalGetTxCounts() {
-    let totalChainsData = JSON.parse(localStorage.getItem("blockchainStats")) || {};
-    let totalTxCounts = {};
+    let totalChainsDataRaw = JSON.parse(sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`)) || [];
+    let selectedChains = JSON.parse(localStorage.getItem("selectedNetworksStats")) || [];
+    
+    let totalChainsData = totalChainsDataRaw.filter(item =>
+        selectedChains.includes(
+            Object.keys(CONFIG.chains).find(key => CONFIG.chains[key].name === item.chain)
+        )
+    );
+        let totalTxCounts = {};
+    console.log("📊 totalChainsData:", totalChainsData);
 
     // Alle Chains durchgehen und Transaktionen summieren
     Object.values(totalChainsData).forEach(chainData => {
-        if (!chainData.dailyTxCounts) return;
+        if (!chainData.daily_tx_counts) return;
 
-        Object.entries(chainData.dailyTxCounts).forEach(([date, count]) => {
+        Object.entries(chainData.daily_tx_counts).forEach(([date, count]) => {
             if (!totalTxCounts[date]) totalTxCounts[date] = 0;
             totalTxCounts[date] += count;
         });
@@ -1025,37 +1069,85 @@ function totalGetTxCounts() {
 }
 
 function sumBlockchainStats() {
-    const blockchainStats = JSON.parse(localStorage.getItem("blockchainStats")) || {};
-
+    let totalChainsDataRaw = JSON.parse(sessionStorage.getItem(`blockchainStats_${connectedWalletAddress}`)) || [];
+    let selectedChains = JSON.parse(localStorage.getItem("selectedNetworksStats")) || [];
+    
+    let blockchainStats = totalChainsDataRaw.filter(item =>
+        selectedChains.includes(
+            Object.keys(CONFIG.chains).find(key => CONFIG.chains[key].name === item.chain)
+        )
+    );
+    
     const totals = {
-        erc20ReceivedTx: 0,
-        erc20SentTx: 0,
-        erc20uniqueReceived: 0,
-        erc20uniqueSent: 0,
-        erc721ReceivedTx: 0,
-        erc721SentTx: 0,
-        erc721uniqueReceivedTx: 0,
-        erc721uniqueSentTx: 0,
-        erc1155ReceivedTx: 0,
-        erc1155SentTx: 0,
-        erc1155uniqueReceivedTx: 0,
-        erc1155uniqueSentTx: 0,
-        failedTx: 0,
-        nftReceivedTx: 0,
-        nftSentTx: 0,
-        totalTx: 0,
-        uniqueNftReceivedTx: 0,
-        uniqueNftSentTx: 0
+        erc20_received_tx: 0,
+        erc20_sent_tx: 0,
+        erc20_unique_received: 0,
+        erc20_unique_sent: 0,
+        erc721_received: 0,
+        erc721_sent: 0,
+        erc721_unique_received: 0,
+        erc721_unique_sent: 0,
+        erc1155_received: 0,
+        erc1155_sent: 0,
+        erc1155_unique_received: 0,
+        erc1155_unique_sent_tx: 0,
+        failed_tx: 0,
+        nft_received_tx: 0,
+        nft_sent_tx: 0,
+        total_tx: 0,
+        unique_nft_received_tx: 0,
+        unique_nft_sent_tx: 0,
+        wallet_first_tx_date: null,
+        wallet_age_days: 0,
+        total_days_used: 0,
+        avg_tx_per_day: 0,
+        chains_used: 0
     };
+
+    let earliestDate = null;
 
     Object.values(blockchainStats).forEach(chainStats => {
         Object.keys(totals).forEach(key => {
             totals[key] += chainStats[key] || 0;
         });
+
+        if (chainStats.firsttxdate) {
+            const txDate = new Date(chainStats.firsttxdate);
+            if (!earliestDate || txDate < earliestDate) {
+                earliestDate = txDate;
+                console.log("earliestDate", earliestDate);
+            }
+        }
     });
+
+    if (earliestDate) {
+        totals.wallet_first_tx_date = earliestDate.toISOString().split("T")[0]; // Nur yyyy-mm-dd
+        const today = new Date();
+        const diffTime = today - earliestDate;
+        totals.wallet_age_days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    const uniqueDays = new Set();
+
+    blockchainStats.forEach(entry => {
+        const dailyCounts = entry.daily_tx_counts || {};
+        Object.entries(dailyCounts).forEach(([date, count]) => {
+            if (count > 0) uniqueDays.add(date);
+        });
+    });
+
+    totals.total_days_used = uniqueDays.size;
+
+    if (totals.total_days_used > 0) {
+        totals.avg_tx_per_day = (totals.total_tx / totals.total_days_used).toFixed(2);
+    }
+
+    totals.chains_used = blockchainStats.length;
+
 
     return totals;
 }
+
 
 
 
@@ -1106,9 +1198,8 @@ function openTotalDailyView(year, month) {
 
     const dailyTransactions = Object.entries(allDailyTxCounts)
         .filter(([date, count]) => date.startsWith(`${year}-${month.toString().padStart(2, "0")}`))
-        .map(([date, count]) => ({ date, count }));
-
-  //  console.log(`Tägliche Transaktionen für ${month}/${year} (ALLE CHAINS):`, dailyTransactions);
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date)); // <--- sortiere chronologisch
 
     document.getElementById("total-calendar-title").textContent = `Daily Transactions (${month}/${year})`;
 
@@ -1119,11 +1210,11 @@ function openTotalDailyView(year, month) {
         const dayElement = document.createElement("div");
         dayElement.classList.add("calendar-day");
         dayElement.innerHTML = `
-        <div class="day-box">
-            <span class="day-number">${date.split("-")[2]}</span>
-            <span class="tx-count">${count}</span>
-        </div>
-    `;
+            <div class="day-box">
+                <span class="day-number">${date.split("-")[2]}</span>
+                <span class="tx-count">${count}</span>
+            </div>
+        `;
         calendarGrid.appendChild(dayElement);
     });
 
@@ -1131,15 +1222,11 @@ function openTotalDailyView(year, month) {
     document.getElementById("total-daily-transactions-calendar").style.display = "block";
 }
 
-function closeTotalCalendar() {
-    document.getElementById("total-daily-transactions-calendar").style.display = "none";
-    document.getElementById("total-transactions-raster").style.display = "block";
-}
 
 
 
 async function tokenblockscout(chain) {
- //   console.log(`tokenblockscout für ${chain.name}`);
+    //   console.log(`tokenblockscout für ${chain.name}`);
 
     try {
         const response = await fetch(`http://localhost:3001/api/token-transactions?chain=${chain.name}&address=${connectedWalletAddress}`);
@@ -1240,3 +1327,190 @@ async function tokenblockscout(chain) {
 }
 
 
+let previousChainSelection = []; 
+
+function toggleChainDropdown() {
+    const dropdown = document.getElementById("chain-dropdown-content");
+    
+    if (dropdown.style.display === "none" || dropdown.style.display === "") {
+        dropdown.style.display = "block";
+
+        // Auswahl merken beim Öffnen
+        previousChainSelection = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]").sort();
+    } else {
+        closeChainSelection(); // ruft update nur auf, wenn sich was geändert hat
+    }
+}
+
+
+
+function buildChainSelectorDropdown() {
+    const container = document.getElementById("chain-dropdown-content");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const savedSelection = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]");
+    const allChainKeys = Object.keys(window.CONFIG.chains);
+
+    const sortedChainKeys = allChainKeys.sort((a, b) => {
+        const nameA = window.CONFIG.chains[a].name.toLowerCase();
+        const nameB = window.CONFIG.chains[b].name.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+
+    // Select All Option
+    const selectAllLi = document.createElement("li");
+    const selectAllCheckbox = document.createElement("input");
+    selectAllCheckbox.type = "checkbox";
+    selectAllCheckbox.id = "select-all-chains";
+    selectAllCheckbox.checked = savedSelection.length === allChainKeys.length;
+
+    selectAllCheckbox.addEventListener("change", function () {
+        const checkboxes = container.querySelectorAll(".chain-checkbox");
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        saveChainSelection();
+    });
+
+    const selectAllLabel = document.createElement("label");
+    selectAllLabel.textContent = "Select All";
+    selectAllLabel.setAttribute("for", "select-all-chains");
+
+    selectAllLi.appendChild(selectAllCheckbox);
+    selectAllLi.appendChild(selectAllLabel);
+    container.appendChild(selectAllLi);
+
+    // Einzelne Chains
+    sortedChainKeys.forEach(chainKey => {
+        const chainName = window.CONFIG.chains[chainKey].name;
+
+        const li = document.createElement("li");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "chain-checkbox";
+        checkbox.value = chainKey;
+        checkbox.checked = savedSelection.includes(chainKey);
+        checkbox.id = `checkbox-${chainKey}`;
+        checkbox.addEventListener("change", saveChainSelection);
+
+        const label = document.createElement("label");
+        label.textContent = chainName;
+        label.setAttribute("for", `checkbox-${chainKey}`);
+
+        li.appendChild(checkbox);
+        li.appendChild(label);
+        container.appendChild(li);
+    });
+}
+
+function saveChainSelection() {
+    const selected = Array.from(document.querySelectorAll(".chain-checkbox"))
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
+
+    localStorage.setItem("selectedNetworksStats", JSON.stringify(selected));
+
+    const allChainKeys = Object.keys(window.CONFIG.chains);
+    const selectAllCheckbox = document.getElementById("select-all-chains");
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = selected.length === allChainKeys.length;
+    }
+
+    console.log("Aktive Auswahl:", selected);
+}
+
+
+document.addEventListener("click", function (event) {
+    const dropdownWrapper = document.getElementById("chain-selector-wrapper");
+    const dropdownContent = document.getElementById("chain-dropdown-content");
+
+    const isDropdownOpen = dropdownContent.style.display === "block";
+    const clickedOutside = !dropdownWrapper.contains(event.target);
+
+    if (isDropdownOpen && clickedOutside) {
+        closeChainSelection(); // Nur wenn offen & außerhalb geklickt wurde
+    }
+});
+
+
+function closeChainSelection() {
+    const dropdown = document.getElementById("chain-dropdown-content");
+    dropdown.style.display = "none";
+
+    const currentSelection = JSON.parse(localStorage.getItem("selectedNetworksStats") || "[]").sort();
+    const hasChanged = JSON.stringify(currentSelection) !== JSON.stringify(previousChainSelection);
+
+    if (hasChanged) {
+        console.log("🟢 Auswahl hat sich geändert → Update!");
+        updateBlockchainStats();
+    } else {
+        console.log("🔵 Keine Änderung → Kein Update.");
+    }
+}
+
+
+
+
+function renderTableBody(tbody) {
+    tbody.innerHTML = "";
+
+    blockchainTableData.forEach(row => {
+        const tr = document.createElement("tr");
+
+        headerMap.forEach(h => {
+            const value = row[h.key];
+
+            let content = typeof value === "number"
+                ? formatNumber(value, h.key === "success_rate" ? 2 : 0)
+                : value || "–";
+
+            if (h.key === "chain") {
+                tr.innerHTML += `<td class="clickable-chain" onclick="setupBlockchainStatsPopup('${row.chain}')">${row.chain}</td>`;
+            } else {
+                tr.innerHTML += `<td>${content}${h.key === "success_rate" ? "%" : ""}</td>`;
+            }
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function sortTableByColumn(index) {
+    const key = headerMap[index].key;
+
+    if (currentSortColumn === key) {
+        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+    } else {
+        currentSortColumn = key;
+        currentSortOrder = "asc";
+    }
+
+    blockchainTableData.sort((a, b) => {
+        const valA = a[key] ?? "";
+        const valB = b[key] ?? "";
+
+        if (!isNaN(valA) && !isNaN(valB)) {
+            return currentSortOrder === "asc" ? valA - valB : valB - valA;
+        } else {
+            return currentSortOrder === "asc"
+                ? String(valA).localeCompare(String(valB))
+                : String(valB).localeCompare(String(valA));
+        }
+    });
+}
+
+function updateSortIcons(thead, sortedIndex, asc) {
+    const headers = thead.querySelectorAll("th");
+    headers.forEach((th, i) => {
+        const icon = th.querySelector(".sort-icon");
+        if (!icon) return;
+        if (i === sortedIndex) {
+            icon.textContent = asc ? "▲" : "▼";
+            th.classList.add("sorted");
+        } else {
+            icon.textContent = "↕";
+            th.classList.remove("sorted");
+        }
+    });
+}
