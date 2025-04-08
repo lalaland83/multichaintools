@@ -506,3 +506,44 @@ app.get("/api/getChainStats/:wallet/:chain", async (req, res) => {
         res.status(500).json({ success: false, error: "Database error" });
     }
 });
+
+app.get("/api/github-trigger", async (req, res) => {
+    try {
+        console.log("Trigger Request gestartet...");
+
+        // Setze hier deine GitHub Repo und Token aus den Umgebungsvariablen
+        const username = process.env.USERNAME;
+        const repo = process.env.REPO;
+        const workflowFile = process.env.WORKFLOW_FILE;
+        const token = process.env.PAT_PUSH;
+        const branch = process.env.BRANCH;
+
+        console.log("Trigger-Daten:", { username, repo, workflowFile, branch });
+
+        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/actions/workflows/${workflowFile}/dispatches`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Accept": "application/vnd.github.v3+json",
+            },
+            body: JSON.stringify({
+                ref: branch
+            })
+        });
+
+        // Logge die Antwort von GitHub
+        const responseBody = await response.json();
+        console.log("GitHub Response:", responseBody);
+
+        if (response.ok) {
+            console.log("Workflow erfolgreich ausgelöst!");
+            return res.status(200).json({ message: "Workflow ausgelöst!" });
+        } else {
+            console.error("Fehler beim Auslösen des Workflows:", responseBody);
+            return res.status(response.status).json({ error: "Fehler beim Auslösen des Workflows" });
+        }
+    } catch (error) {
+        console.error("Fehler:", error);
+        return res.status(500).json({ error: "Interner Serverfehler" });
+    }
+});
