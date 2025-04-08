@@ -507,7 +507,7 @@ app.get("/api/getChainStats/:wallet/:chain", async (req, res) => {
     }
 });
 
-app.get("/api/github-trigger", async (req, res) => {
+app.post("/api/github-trigger", async (req, res) => {
     try {
         console.log("Trigger Request gestartet...");
 
