@@ -510,52 +510,72 @@ app.get("/api/getChainStats/:wallet/:chain", async (req, res) => {
 
 app.post("/api/github-trigger", async (req, res) => {
     try {
-      console.log("Trigger Request gestartet...");
-  
-      // Schritt 1: Prüfen, ob bla.json vorhanden ist
-      const filePath = path.join(process.cwd(), "bla.json");
-  
-      if (!fs.existsSync(filePath)) {
-        console.log("bla.json wurde nicht gefunden. Trigger wird abgebrochen.");
-        return res.status(400).json({ error: "bla.json fehlt. Kein Trigger gesendet." });
-      }
-  
-      console.log("bla.json gefunden. Workflow wird getriggert...");
-  
-      const username = process.env.USERNAME;
-      const repo = process.env.REPO;
-      const workflowFile = process.env.WORKFLOW_FILE;
-      const token = process.env.PAT_PUSH;
-      const branch = process.env.BRANCH;
-  
-      const triggerUrl = `https://api.github.com/repos/${username}/${repo}/actions/workflows/${workflowFile}/dispatches`;
-  
-      const response = await fetch(triggerUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/vnd.github.v3+json",
-        },
-        body: JSON.stringify({ ref: branch }),
-      });
-  
-      const responseBody = await response.text();
-      console.log("GitHub Response:", responseBody);
-  
-      if (response.ok) {
-        console.log("Workflow erfolgreich ausgelöst!");
-  
-        // Schritt 2: Datei löschen
-        fs.unlinkSync(filePath);
-        console.log("bla.json erfolgreich gelöscht.");
-  
-        return res.status(200).json({ message: "Workflow ausgelöst und bla.json gelöscht." });
-      } else {
-        console.error("Fehler beim Auslösen des Workflows:", responseBody);
-        return res.status(response.status).json({ error: "Fehler beim Auslösen des Workflows" });
-      }
+        console.log("Trigger Request gestartet...");
+
+        const username = process.env.USERNAME;
+        const repo = process.env.REPO;
+        const workflowFile = process.env.WORKFLOW_FILE;
+        const token = process.env.PAT_PUSH;
+        const branch = process.env.BRANCH;
+
+        const fileUrl = `https://api.github.com/repos/${username}/${repo}/contents/bla.json`;
+
+        // 👉 Schritt 1: Existenz prüfen
+        const fileRes = await fetch(fileUrl, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/vnd.github.v3+json",
+            },
+        });
+
+        if (fileRes.status !== 200) {
+            console.log("bla.json nicht gefunden. Abbruch.");
+            return res.status(404).json({ error: "bla.json not found" });
+        }
+
+        const fileData = await fileRes.json();
+        const fileSha = fileData.sha;
+
+        // 👉 Schritt 2: Workflow auslösen
+        const triggerRes = await fetch(`https://api.github.com/repos/${username}/${repo}/actions/workflows/${workflowFile}/dispatches`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/vnd.github.v3+json",
+            },
+            body: JSON.stringify({ ref: branch }),
+        });
+
+        const triggerBody = await triggerRes.text();
+        console.log("GitHub Trigger Response:", triggerBody);
+
+        if (!triggerRes.ok) {
+            return res.status(triggerRes.status).json({ error: "Fehler beim Triggern", details: triggerBody });
+        }
+
+        // 👉 Schritt 3: bla.json löschen
+        const deleteRes = await fetch(fileUrl, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/vnd.github.v3+json",
+            },
+            body: JSON.stringify({
+                message: "Remove bla.json after trigger",
+                sha: fileSha,
+            }),
+        });
+
+        const deleteBody = await deleteRes.text();
+        console.log("Löschen Response:", deleteBody);
+
+        if (!deleteRes.ok) {
+            return res.status(deleteRes.status).json({ error: "Trigger erfolgreich, aber bla.json konnte nicht gelöscht werden", details: deleteBody });
+        }
+
+        return res.status(200).json({ message: "✅ Workflow ausgelöst & bla.json gelöscht!" });
     } catch (error) {
-      console.error("Fehler:", error);
-      return res.status(500).json({ error: "Interner Serverfehler" });
+        console.error("Fehler:", error);
+        return res.status(500).json({ error: "Interner Serverfehler" });
     }
-  });
+});
