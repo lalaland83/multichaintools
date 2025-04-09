@@ -510,23 +510,16 @@ app.get("/api/getChainStats/:wallet/:chain", async (req, res) => {
 
 app.post("/api/github-trigger", async (req, res) => {
     try {
-        console.log("🚀 Trigger Request gestartet...");
+        console.log("Trigger Request gestartet...");
 
         const username = process.env.USERNAME;
-        const repo = process.env.REPO;
+        const repoCheck = process.env.REPO_CHECK; // für die bla.json-Prüfung
+        const repoTrigger = process.env.REPO; // für das private Trigger-Repo
         const workflowFile = process.env.WORKFLOW_FILE;
         const token = process.env.PAT_PUSH;
         const branch = process.env.BRANCH;
 
-        console.log("🧠 ENV Variablen:");
-        console.log("USERNAME:", username);
-        console.log("REPO:", repo);
-        console.log("WORKFLOW_FILE:", workflowFile);
-        console.log("BRANCH:", branch);
-        console.log("TOKEN Prefix:", token?.slice(0, 10));
-
-        const fileUrl = `https://api.github.com/repos/${username}/${repo}/contents/bla.json?ref=${branch}`;
-        console.log("📦 GitHub File-URL:", fileUrl);
+        const fileUrl = `https://api.github.com/repos/${username}/${repoCheck}/contents/bla.json?ref=${branch}`;
 
         // 👉 Schritt 1: Existenz prüfen
         const fileRes = await fetch(fileUrl, {
@@ -536,24 +529,18 @@ app.post("/api/github-trigger", async (req, res) => {
             },
         });
 
-        const fileText = await fileRes.text();
-        console.log("📩 Response von fileRes:", fileText);
-        console.log("🔢 Status Code fileRes:", fileRes.status);
+        console.log("Status bei Datei-Prüfung:", fileRes.status);
 
         if (fileRes.status !== 200) {
-            console.log("❌ bla.json nicht gefunden. Abbruch.");
-            return res.status(404).json({ error: "bla.json not found", status: fileRes.status, body: fileText });
+            console.log("bla.json nicht gefunden. Abbruch.");
+            return res.status(404).json({ error: "bla.json not found" });
         }
 
-        const fileData = JSON.parse(fileText);
+        const fileData = await fileRes.json();
         const fileSha = fileData.sha;
-        console.log("✅ SHA von bla.json:", fileSha);
 
-        // 👉 Schritt 2: Workflow auslösen
-        const dispatchUrl = `https://api.github.com/repos/${username}/${repo}/actions/workflows/${workflowFile}/dispatches`;
-        console.log("📤 Trigger Workflow-URL:", dispatchUrl);
-
-        const triggerRes = await fetch(dispatchUrl, {
+        // 👉 Schritt 2: Workflow im privaten Repo auslösen
+        const triggerRes = await fetch(`https://api.github.com/repos/${username}/${repoTrigger}/actions/workflows/${workflowFile}/dispatches`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -563,16 +550,13 @@ app.post("/api/github-trigger", async (req, res) => {
         });
 
         const triggerBody = await triggerRes.text();
-        console.log("⚙️ GitHub Trigger Response:", triggerBody);
-        console.log("🔢 Status Code triggerRes:", triggerRes.status);
+        console.log("GitHub Trigger Response:", triggerBody);
 
         if (!triggerRes.ok) {
             return res.status(triggerRes.status).json({ error: "Fehler beim Triggern", details: triggerBody });
         }
 
         // 👉 Schritt 3: bla.json löschen
-        console.log("🗑️ Lösche bla.json...");
-
         const deleteRes = await fetch(fileUrl, {
             method: "DELETE",
             headers: {
@@ -586,8 +570,7 @@ app.post("/api/github-trigger", async (req, res) => {
         });
 
         const deleteBody = await deleteRes.text();
-        console.log("🧾 Lösch-Response:", deleteBody);
-        console.log("🔢 Status Code deleteRes:", deleteRes.status);
+        console.log("Löschen Response:", deleteBody);
 
         if (!deleteRes.ok) {
             return res.status(deleteRes.status).json({ error: "Trigger erfolgreich, aber bla.json konnte nicht gelöscht werden", details: deleteBody });
@@ -595,8 +578,9 @@ app.post("/api/github-trigger", async (req, res) => {
 
         return res.status(200).json({ message: "✅ Workflow ausgelöst & bla.json gelöscht!" });
     } catch (error) {
-        console.error("❗ Fehler:", error);
-        return res.status(500).json({ error: "Interner Serverfehler", details: error.message });
+        console.error("Fehler:", error);
+        return res.status(500).json({ error: "Interner Serverfehler" });
     }
 });
+
 
