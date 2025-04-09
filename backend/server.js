@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { saveBlockchainStats, pool } = require("./db");
 
 
@@ -512,7 +513,7 @@ app.post("/api/github-trigger", async (req, res) => {
       console.log("Trigger Request gestartet...");
   
       // Schritt 1: Prüfen, ob bla.json vorhanden ist
-      const filePath = path.join(process.cwd(), "public", "bla.json");
+      const filePath = path.join(process.cwd(), "bla.json");
   
       if (!fs.existsSync(filePath)) {
         console.log("bla.json wurde nicht gefunden. Trigger wird abgebrochen.");
