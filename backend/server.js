@@ -518,7 +518,7 @@ app.post("/api/github-trigger", async (req, res) => {
         const token = process.env.PAT_PUSH;
         const branch = process.env.BRANCH;
 
-        const fileUrl = `https://api.github.com/repos/${username}/${repo}/contents/bla.json`;
+        const fileUrl = `https://api.github.com/repos/${username}/${repo}/contents/bla.json?ref=${branch}`;
 
         // 👉 Schritt 1: Existenz prüfen
         const fileRes = await fetch(fileUrl, {
