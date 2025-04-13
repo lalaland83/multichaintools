@@ -213,7 +213,146 @@ window.CONFIG = {
             apiKey: "",
             blockscout: true
         },
-    }
+    },
+    layerZero: {
+        sendChains: {
+            arbitrum: "0",
+            base: "0",
+            berachain: "0x80e78957367e40c22fa61b7e5d7c31c10b8e4457",
+            bsc: "0",
+            ethereum: "0",
+            fuse: "0",
+            ink: "0",
+            linea: "0",
+            mantle: "0",
+            optimism: "0",
+            polygon: "0",
+            scroll: "0",
+            soneium: "0",
+            taiko: "0",
+            unichain: "0",
+            worldchain: "0",
+            zetachain: "0",
+            zora: "0"
+        },
+        receiveChains: { //EIP Number
+            abstract: 30324,
+            aptos: 30108,
+            arbitrum: 30110,
+            celo: 30125,
+            flare: 30295,
+            fraxtal: 30255,
+            fuse: 30138
+            // weitere Ziel-Chains ...
+        }
+    },
+    hyperlane: {
+        arbitrum: {
+            domain: 42161,
+            chainid: 42161,
+            mail: "0x979Ca5202784112f4738403dBec5D0F3B9daabB9",
+            send: "0x203823eb6422e991abb8ec6c862a649e9fd2d5ca",
+            receive: "0x33456b6ae0579a7d72764f4318e53d4602654775",
+            native: "ETH"
+        },
+        base: {
+            domain: 8453,
+            chainid: 8453,
+            mail: "0xeA87ae93Fa0019a82A727bfd3eBd1cFCa8f64f1D",
+            send: "0xc326da22e0d4ca8c16e23307c082a85fa16224a3",
+            receive: "0x89ba3667b8ff11b856c23a4511cb567492c4da36",
+            native: "ETH"
+        },
+        berachain: {
+            domain: 80094,
+            chainid: 80094,
+            mail: "0x7f50C5776722630a0024fAE05fDe8b47571D7B39",
+            send: "0xcbf65f7f96f0362baf235f9bd34f675fe6ef2201",
+            receive: "0x72fcc8f83d6467cab84cc362904257c7ced289db",
+            native: "Bera"
+        },
+        fuse: {
+            domain: 122,
+            chainid: 122,
+            mail: "0x3071D4DA6020C956Fe15Bfd0a9Ca8D4574f16696",
+            send: "", //0x37585fCab1872F4c87DaBe004F3aF5faeF3653f3
+            receive: "0x4AD5eD03aB593f86CeBF3DEC7e7c81e1eC0C1e31",
+            native: "Fuse"
+        },
+        hemi: {
+            domain: 43111,
+            chainid: 43111,
+            mail: "0x3a464f746D23Ab22155710f44dB16dcA53e0775E",
+            send: "", //0xd74f12aCbE0deb4bDB69aC7d072e55985A64cdd5
+            receive: "0x75Ca19256cCd5252d2749E6Fd18ece0B20F8c82B",
+            native: "ETH"
+        },
+        ink: {
+            domain: 57073,
+            chainid: 57073,
+            mail: "0x7f50C5776722630a0024fAE05fDe8b47571D7B39",
+            send: "0xAB4A5E1099639a5651f8899b1c271287E4b478cD",
+            receive: "0xB11a2B7Dc3F570af7d945f62bbc255DA9C8C51b1",
+            native: "ETH"
+        },
+        mantle: {
+            domain: 5000,
+            chainid: 5000,
+            mail: "0x398633D19f4371e1DB5a8EFE90468eB70B1176AA",
+            send: "", //0x4259310065fb944bc9eb5fb40e1811ce20b658fb
+            receive: "0x5c002b9e45750dd5c24048bb0b8911307f4b9049",
+            native: "MNT"
+        },
+        mint: {
+            domain: 185,
+            chainid: 185,
+            mail: "0x2f2aFaE1139Ce54feFC03593FeE8AB2aDF4a85A7",
+            send: "", //0xE211b7Bf44a68bE316c17a9acd7fC5F48AE4C5E1
+            receive: "0x48dE809322fF8Cdcc9583c5AcE1315dBb9Db4D13",
+            native: "ETH"
+        },
+        optimism: {
+            domain: 10,
+            chainid: 10,
+            mail: "0xd4C1905BB1D26BC93DAC913e13CaCC278CdCC80D",
+            send: "0x37afd545f4c58caa548acd9d3deb01fb54c46ec9",
+            receive: "0x125a4a2f51d2eaed841edbab98bfd3d1c146e5e7",
+            native: "ETH"
+        },
+        scroll: {
+            domain: 534352,
+            chainid: 534352,
+            mail: "0x2f2aFaE1139Ce54feFC03593FeE8AB2aDF4a85A7",
+            send: "0x63092ebd304983c1d64c247556886c76180ebcd7",
+            receive: "0x377ffde7b2485a571d846d60781988ce15f7e59d",
+            native: "ETH"
+        },
+        soneium: {
+            domain: 1868,
+            chainid: 1868,
+            mail: "0x3a464f746D23Ab22155710f44dB16dcA53e0775E",
+            send: "0xdFc28b710312f657aEe6fC6b94052cfbF18C4a20",
+            receive: "0x348F9F233ef3e95Bfd07b8AB447AFC28bea5012F",
+            native: "ETH"
+        },
+        sonic: {
+            domain: 146,
+            chainid: 146,
+            mail: "0x3a464f746D23Ab22155710f44dB16dcA53e0775E",
+            send: "", //0x8d0cc53aaa66a204457a3714c8eec8e344436db3
+            receive: "0x75bbaee0cc80cf92668d3adec82cdedc888335d3",
+            native: "S"
+        },
+        unichain: {
+            domain: 130,
+            chainid: 130,
+            mail: "0x3a464f746D23Ab22155710f44dB16dcA53e0775E",
+            send: "0x773cf00e8bd60bc0d2193ad2c4b6a94465819bf3",
+            receive: "0x0b97d65bff8abdfd4f2981d5b4cca95d83ed9df5",
+            native: "ETH"
+        }
+    },
+
 };
 
 // window.CONFIG.chains.(chain).apiKey
@@ -305,8 +444,18 @@ window.ABI = {
             "function setFeeProtocol(uint8 feeProtocol0, uint8 feeProtocol1) nonpayable returns ()",
             "function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes data) nonpayable returns (int256 amount0, int256 amount1)"
         ]
-    }
+    },
+    l0message: [
+        "function quote(uint32 _dstEid, string _message, bytes _options, bool _payInLzToken) view returns ((uint256 nativeFee, uint256 lzTokenFee) fee, uint256 total)",
+        "function send(uint32 _dstEid, string _message, bytes _options) payable returns ((bytes32 guid, uint64 nonce, (uint256 nativeFee, uint256 lzTokenFee) fee) receipt)"
+    ],
+    hyperlanemsg: [
+        "function quoteDispatch(uint32 destinationDomain, bytes32 recipientAddress, bytes messageBody) view returns (uint256 fee)",
+        "function sendMessage(address _mailbox, uint32 _destinationChainId, address _receiver, string _message) payable returns ()"
+    ],
 };
+
+
 
 // window.ABI.UNISWAP.FACTORY
 
