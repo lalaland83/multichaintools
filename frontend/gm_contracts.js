@@ -212,6 +212,20 @@ const contracts = {
         responseAddress: "0x8d0cc53aAA66A204457A3714C8EEc8E344436Db3", 
         chainIdHex: "0x14d2", explorer: "https://explorer.superseed.xyz/tx/", 
         deployEnabled: true 
+    },
+        137: {
+        name: "Polygon",
+        address: "0x98cfbfaf7d4bddb5995dfba91f0dd260557bc968",
+        responseAddress: "0x12e0508587844fe5aa0dc1e23ca560a1a5bc5e82",
+        chainIdHex: "0x89", explorer: "https://polygonscan.com/tx/",
+        deployEnabled: true
+    },
+    146: {
+        name: "Sonic",
+        address: "0x5b9fc69e136fa06ae95cd10914f83e46dda83a22",
+        responseAddress: "0x7c53fb7e35096b052e6a41533958fded176974b3",
+        chainIdHex: "0x92", explorer: "https://sonicscan.org/tx/",
+        deployEnabled: true
     }
 };
 
