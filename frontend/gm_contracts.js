@@ -226,6 +226,13 @@ const contracts = {
         responseAddress: "0x7c53fb7e35096b052e6a41533958fded176974b3",
         chainIdHex: "0x92", explorer: "https://sonicscan.org/tx/",
         deployEnabled: true
+    },
+        98866: {
+        name: "Plume",
+        address: "0xD549ED1495bC3a8e0a104addC5D0fb1632f8506C",
+        responseAddress: "0x74FD8bE4DDaAF4525EF61970b1f95a410516DDd3",
+        chainIdHex: "0x18232", explorer: "https://explorer.plume.org/tx/",
+        deployEnabled: true
     }
 };
 
