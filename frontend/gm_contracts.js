@@ -227,6 +227,13 @@ const contracts = {
         chainIdHex: "0x92", explorer: "https://sonicscan.org/tx/",
         deployEnabled: true
     },
+        252: {
+        name: "Fraxtal",
+        address: "0x92104c230eb29865de9978318321c27cdf95fec3",
+        responseAddress: "0x538b23918b639ce8eb88aa073aa4fbc843115211",
+        chainIdHex: "0xfc", explorer: "https://fraxscan.com/tx/",
+        deployEnabled: true
+    },
         98866: {
         name: "Plume",
         address: "0xD549ED1495bC3a8e0a104addC5D0fb1632f8506C",
@@ -237,3 +244,4 @@ const contracts = {
 };
 
 const abi = ["function sayGM()"];
+
