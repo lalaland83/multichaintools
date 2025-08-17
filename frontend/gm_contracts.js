@@ -234,6 +234,13 @@ const contracts = {
         chainIdHex: "0xfc", explorer: "https://fraxscan.com/tx/",
         deployEnabled: true
     },
+        320: {
+        name: "ZkCandy",
+        address: "0xeb50F03fe1eB48B7D09E1Bc3F54559B225eF2839",
+        responseAddress: "0x72E42cDe4276b0530990e83641D082AaD8eFE9E8",
+        chainIdHex: "0x140", explorer: "https://explorer.zkcandy.io/tx/",
+        deployEnabled: true
+    },
         98866: {
         name: "Plume",
         address: "0xD549ED1495bC3a8e0a104addC5D0fb1632f8506C",
@@ -244,4 +251,5 @@ const contracts = {
 };
 
 const abi = ["function sayGM()"];
+
 
