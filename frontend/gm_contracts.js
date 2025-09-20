@@ -247,9 +247,17 @@ const contracts = {
         responseAddress: "0x74FD8bE4DDaAF4525EF61970b1f95a410516DDd3",
         chainIdHex: "0x18232", explorer: "https://explorer.plume.org/tx/",
         deployEnabled: true
+    },
+        42220: {
+        name: "Celo",
+        address: "0x510ED15a58A2ac0b05d11b8E5537D10dA3503EFb",
+        responseAddress: "0xc8CEa1EB947a95D33faF5547eE3e9b53aaC72fE1",
+        chainIdHex: "0xa4ec", explorer: "https://celo.blockscout.com/tx/",
+        deployEnabled: true
     }
 };
 
 const abi = ["function sayGM()"];
+
 
 
