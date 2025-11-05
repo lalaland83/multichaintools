@@ -113,7 +113,7 @@ const contracts = {
         deployEnabled: true
     },
     10143: {
-        name: "Monad (Testnet)",
+        name: "Monad (Testnet/crap)",
         address: "0xc5a9e81e6B8D13467216a4318afC178DC6D2F3C1",
         responseAddress: "0x355adD6a56C3516dB56799Cfe2CC5605873BC12D",
         chainIdHex: "0x279f",
@@ -258,6 +258,7 @@ const contracts = {
 };
 
 const abi = ["function sayGM()"];
+
 
 
 
