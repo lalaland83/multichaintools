@@ -10,7 +10,6 @@ async function connectWallet() {
     provider = new ethers.providers.Web3Provider(window.ethereum);
 
     try {
-        // 🔥 **Immer eine Bestätigung in der Wallet erzwingen**
         accounts = await provider.send("eth_requestAccounts", []);  
 
         if (accounts.length === 0) {
@@ -180,5 +179,6 @@ function updateStatsButtonsState() {
     document.getElementById("totalStatsButton").disabled = !isConnected;
     document.getElementById("refreshStatsButton").disabled = !isConnected;
 }
+
 
 
