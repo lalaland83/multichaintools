@@ -257,7 +257,9 @@ const contracts = {
     }
 };
 
+
 const abi = ["function sayGM()"];
+
 
 
 
