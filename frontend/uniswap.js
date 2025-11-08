@@ -7,6 +7,7 @@ let allCachedPositions = JSON.parse(localStorage.getItem("cachedPositions")) || 
 let cachedPositions = allCachedPositions.filter(p => p.chain === selectedChain);
 
 
+
 // 🔹 Falls "all" → Standard-Chain setzen
 if (selectedChain === "all") {
     console.warn("⚠️ 'all' ist keine einzelne Chain. Standard-Provider wird verwendet.");
@@ -979,4 +980,5 @@ async function refreshSinglePosition(positionId, chain, btn) {
 
     btn.classList.remove("rotating");
 }
+
 
