@@ -33,7 +33,7 @@ async function renderChainButtons() {
             chainDiv.appendChild(responseDiv);
         }
 
-        // ✅ Neuer Button: "Send to Receiver" (falls `receiveAddress` existiert)
+        // ✅ Button: "Send to Receiver" (falls `receiveAddress` existiert)
         if (chain.receiveAddress && chain.receiveAddress !== "") {
             const sendDiv = document.createElement("div");
             sendDiv.classList.add("button-container");
@@ -313,6 +313,7 @@ async function sendResponse(chainId) {
         document.getElementById(`response-status-${chainId}`).innerText = `❌ Error: ${error.message}`;
     }
 }
+
 
 
 
