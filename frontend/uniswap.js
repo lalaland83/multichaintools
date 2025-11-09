@@ -8,7 +8,7 @@ let cachedPositions = allCachedPositions.filter(p => p.chain === selectedChain);
 
 
 
-// 🔹 Falls "all" → Standard-Chain setzen
+// 🔹 Falls "all" → Standard-Chain setzen!
 if (selectedChain === "all") {
     console.warn("⚠️ 'all' ist keine einzelne Chain. Standard-Provider wird verwendet.");
     selectedChain = "BASE"; // Oder eine andere bevorzugte Chain
@@ -980,5 +980,6 @@ async function refreshSinglePosition(positionId, chain, btn) {
 
     btn.classList.remove("rotating");
 }
+
 
 
