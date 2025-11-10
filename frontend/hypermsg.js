@@ -1,8 +1,6 @@
 
 provider = new ethers.providers.Web3Provider(window.ethereum);
 
-
-
 function createHyperlanePage() {
 
     const pageContainer = document.createElement('div');
@@ -487,5 +485,6 @@ function populateSendChainsDropdown() {
         option.textContent = chain.charAt(0).toUpperCase() + chain.slice(1);
         dropdown.appendChild(option);
     });
+
 
 }
