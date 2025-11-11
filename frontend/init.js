@@ -6,7 +6,6 @@ async function initializePage() {
     if (isDarkMode) document.body.classList.add("dark-mode");
     document.getElementById("darkModeToggle").checked = isDarkMode;
 
- //   console.log("🔎 Prüfe Wallet-Status...");
  //   console.log("🔎 localStorage walletConnected:", localStorage.getItem("walletConnected"));
 
     // 🔹 Aktuelle Auswahl aus LocalStorage laden oder Standardwert setzen
@@ -127,4 +126,5 @@ document.addEventListener("DOMContentLoaded", () => {
     updatePositionsSummary();
     updateStatsButtonsState();
 });
+
 
