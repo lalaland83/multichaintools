@@ -798,15 +798,4 @@ button:hover {
     font-size: 1em;
 }
 
-.tx-counttest {
-    font-size: 3em;
-}
-
-.day-numbertest {
-    position: absolute;
-    top: 2px;
-    right: 5px;
-    font-size: 0.7em;
-    color: #bbb;
-}
 
