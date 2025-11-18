@@ -798,4 +798,12 @@ button:hover {
     font-size: 1em;
 }
 
+.blue-test-box {
+    position: relative;
+    width: 50%;
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
