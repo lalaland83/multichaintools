@@ -798,24 +798,4 @@ button:hover {
     font-size: 1em;
 }
 
-.blue-test-box {
-    position: relative;
-    width: 50%;
-    height: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.switch-blue-test {
-    position: relative;
-    width: 75px;
-    height: 48px;
-}
-
-.switch-blue-test input {
-    opacity: 20;
-    width: 0;
-    height: 0;
-}
 
