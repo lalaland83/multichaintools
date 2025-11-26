@@ -254,11 +254,26 @@ const contracts = {
         responseAddress: "0xc8CEa1EB947a95D33faF5547eE3e9b53aaC72fE1",
         chainIdHex: "0xa4ec", explorer: "https://celo.blockscout.com/tx/",
         deployEnabled: true
+    },
+        747474: {
+        name: "Katana",
+        address: "0xec1e43ff0d2bf10b352d338bb3cdb9a66a1a949d",
+        responseAddress: "0xb103e16bbe8fabc7c2bd49a94a3222717b54816c",
+        chainIdHex: "0xb67d2", explorer: "https://katanascan.com/tx/",
+        deployEnabled: true
+    },
+        9745: {
+        name: "Plasma",
+        address: "0xD549ED1495bC3a8e0a104addC5D0fb1632f8506C",
+        responseAddress: "0x74FD8bE4DDaAF4525EF61970b1f95a410516DDd3",
+        chainIdHex: "0x2611", explorer: "https://plasmascan.to/tx/",
+        deployEnabled: true
     }
 };
 
 
 const abi = ["function sayGM()"];
+
 
 
 
